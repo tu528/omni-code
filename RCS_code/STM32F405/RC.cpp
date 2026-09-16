@@ -1,6 +1,7 @@
 #include "label.h"
 #include "RC.h"
 #include "control.h"
+#include "HTmotor.h"
 
 void RC::Init(UART* huart, USART_TypeDef* Instance, const uint32_t BaudRate)
 {
@@ -23,7 +24,7 @@ void RC::OnRC()
 
 void RC::OnPC()
 {
-	;
+	
 }
 
 void RC::Update()
@@ -37,7 +38,7 @@ void RC::RC_CheckState() {
 	switch (RC_STATE(rc.s[0], rc.s[1]))
 	{
 	case RC_STATE(UP, UP):
-		ctrl.mode = CONTROL::TEST;
+		ctrl.mode = CONTROL::FIRE;
 		break;
 
 	case RC_STATE(UP, MID):
@@ -82,22 +83,6 @@ void RC::RC_Control() {
 
 	if (ctrl.mode != CONTROL::RESET)
 	{
-		if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
-		{
-			ctrl.chassis.speedx = rc.ch[0] * para.max_speed / 660.f;
-		}
-		else
-		{
-			ctrl.chassis.speedx = 0;
-		}
-		if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
-		{
-			ctrl.chassis.speedy = rc.ch[1] * para.max_speed / 660.f;
-		}
-		else
-		{
-			ctrl.chassis.speedy = 0;
-		}
 		
 		switch (ctrl.mode)
 		{
@@ -133,22 +118,28 @@ void RC::RC_Control() {
 
 		case CONTROL::TEST:
 		{
-			if (rc.ch[2] >= 30 || rc.ch[2] <= -30)
+			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
 			{
-				ctrl.chassis.speedz = rc.ch[2] * para.max_speed / 660.f;
+				ctrl.chassis.speedx = (-1)*rc.ch[0] * para.max_speed / 660.f;
 			}
 			else
 			{
-				ctrl.chassis.speedz = 0;
+				ctrl.chassis.speedx = 0;
 			}
-			if (rc.ch[2] >= 30 || rc.ch[2] <= -30)
+			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
 			{
-				ctrl.chassis.speedz = rc.ch[2] * para.max_speed / 660.f;
+				ctrl.chassis.speedy = (-1)*rc.ch[1] * para.max_speed / 660.f;
 			}
 			else
 			{
-				ctrl.chassis.speedz = 0;
+				ctrl.chassis.speedy = 0;
 			}
+
+			if ((rc.ch[2] >= 20 || rc.ch[2] <= -20)|| (rc.ch[3] >= 20 || rc.ch[3] <= -20))
+			{
+				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / 660.f);
+			}
+			
 		}
 			break;
 
@@ -168,20 +159,13 @@ void RC::RC_Control() {
 		}
 	}
 	else {
-		can1_motor[0].setspeed = 0;
-		can1_motor[1].setspeed = 0;
-		can1_motor[2].setspeed = 0;
-		can1_motor[3].setspeed = 0;
-		can1_motor[4].setspeed = 0;
-		can1_motor[5].setspeed = 0;
-	
 		can2_motor[0].setspeed = 0;
 		can2_motor[1].setspeed = 0;
 		can2_motor[2].setspeed = 0;
 		can2_motor[3].setspeed = 0;
 		can2_motor[4].setspeed = 0;
 		can2_motor[5].setspeed = 0;
-		//DMmotor[0].setSpeed = 0;
+		DMmotor[0].setSpeed = 0;
 		//DMmotor[1].setSpeed = 0;
 		//DMmotor[2].setSpeed = 0;
 	}

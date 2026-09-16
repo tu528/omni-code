@@ -68,8 +68,8 @@ void start_task(void* pvParameters)
 		(UBaseType_t)CONTROL_TASK_PRIO,
 		(TaskHandle_t*)&ControlTask_Handler);
 
-	vTaskDelete(StartTask_Handler); //删除开始任务
 	taskEXIT_CRITICAL();            //退出临界区
+	vTaskDelete(StartTask_Handler); //删除开始任务
 }
 int CNT = 0;
 void MotorUpdateTask(void* pvParameters)
@@ -124,8 +124,8 @@ void ControlTask(void* pvParameters)
 	while (true)
 	{
 		ctrl.chassis.Update();
-		//ctrl.pantile.Update();
-		//ctrl.shooter.Update();
+		ctrl.pantile.Update();
+		ctrl.shooter.Update();
 		rc.Update();
 		vTaskDelay(5);
 	}

@@ -2,7 +2,7 @@
 #include "gpio.h"
 #include "HTmotor.h"
 #include "imu.h"
-#define DEG_TO_RAD 0.017453292f  // ¦Ð / 180
+#define DEG_TO_RAD 0.017453292f  // ï¿½ï¿½ / 180
 Motor::Motor(const motor_type type, const motor_mode mode, const function_type function, const uint32_t id, PID _speed, PID _position, PID _speed2)
 	: ID(id)
 	, type(type)
@@ -94,11 +94,11 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 	{
 		trainsmit_or_receive_ID -= 4;
 	}*/
-	//----------------------------------------------------------------
-	//20220121--hz
+	/*----------------------------------------------------------------
+	20220121--hz*/
 	if (mode == ACE)
 	{
-
+		
 		if (spinning)
 		{
 
@@ -106,7 +106,7 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 		else {
 			if (need_curcircle > 0)
 			{
-				
+
 
 			}
 			else if (need_curcircle <= 0)
@@ -123,16 +123,17 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 		{
 			current = 0;
 		}
+
 	}
 	else if (mode == POS)
 	{
-		setspeed = pid[position].Position(setangle - angle[0], 10000.f);
+		setspeed = pid[position].Position(getdeltaa((int16_t)(setangle - angle[0])),10000.f);//æœ€çŸ­è·¯å¾„
 		current = pid[speed].Position(setspeed - curspeed, 10000.f);
 		setcurrent = current;
 	}
 	else if (mode == SPD)
 	{
-		setspeed = testspeed;
+		
 		current = pid[speed].Position(setspeed - curspeed, 10000.f);
 		setcurrent = current;
 	}
@@ -140,15 +141,15 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 	GetDistanceFromMechanicalAngle();
 	angle[pre] = angle[now];
 	current = setrange(current, maxcurrent);
-	odata[trainsmit_or_receive_ID * 2] = (current & 0xff00) >> 8;//¸ß°ËÎ»
+	odata[trainsmit_or_receive_ID * 2] = (current & 0xff00) >> 8;
 	odata[trainsmit_or_receive_ID * 2 + 1] = current & 0x00ff;
 }
 void Motor::recorded_the_Laps() {
 	int16_t delta = angle[now] - angle[pre];
-	// ´¦Àí»ØÈÆ£ºË³Ê±Õë
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ£ï¿½Ë³Ê±ï¿½ï¿½
 	if (delta > 8192 / 2)
 		delta -= 8192;
-	// ´¦Àí»ØÈÆ£ºÄæÊ±Õë
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ£ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 	else if (delta < -8192 / 2)
 		delta += 8192;
 
@@ -160,7 +161,7 @@ uint8_t initial_cnt=0;
 void Motor::GetDistanceFromMechanicalAngle() {
 	if (initial_cnt<5)
 	initial_cnt++;
-	distance=(6.2831853f/ 8192.0f)*sum_angle * (WHEEL_RADIUS_MM / GEAR_RATIO)-initial_x;  // µ¥Î»£ºmm
+	distance=(6.2831853f/ 8192.0f)*sum_angle * (WHEEL_RADIUS_MM / GEAR_RATIO)-initial_x;  // ï¿½ï¿½Î»ï¿½ï¿½mm
 
 	if(initial_cnt<3)
 	initial_x = distance;

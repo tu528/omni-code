@@ -14,7 +14,7 @@ public:
 	Motor* shooter_motor[SHOOTER_MOTOR_NUM]{};
 	Motor* supply_motor[SUPPLY_MOTOR_NUM]{};
 	
-	enum MODE { TEST, RC, AUTOAIM, RESET, ROTATION, SPINNING, FOLLOW, SEPARATE, FIRE, STOP, LOCK } mode;
+	enum MODE { TEST, RC, AUTOAIM, RESET, ROTATION, SPINNING, FOLLOW, SEPARATE, FIRE, STOP, LOCK } mode = TEST;
 	struct CHASSIS
 	{
 
@@ -60,7 +60,7 @@ public:
 	SHOOTER shooter;
 	
 	static int16_t Setrange(const int16_t original, const int16_t range);
-	void Control_Pantile(int32_t ch_yaw, int32_t ch_pitch);
+	void Control_Pantile(float ch_yaw, float ch_pitch);
 	float GetDelta(float delta);
 	void Init(std::vector<Motor*> motor);
 	void init_dm();

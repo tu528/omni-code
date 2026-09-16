@@ -1,6 +1,6 @@
 VisualGDB/Debug/usart.o: usart.cpp usart.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
- C:/Users/wu/Desktop/new-code/RCS_code/STM32F405/stm32f4xx_hal_conf.h \
+ C:/Users/wu/Desktop/omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7/RCS_code/STM32F405/stm32f4xx_hal_conf.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/CMSIS_HAL/Device/ST/STM32F4xx/Include/stm32f4xx.h \
@@ -103,7 +103,7 @@ VisualGDB/Debug/usart.o: usart.cpp usart.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spdifrx.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_lptim.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/FreeRTOS.h \
- C:/Users/wu/Desktop/new-code/RCS_code/STM32F405/FreeRTOSConfig.h \
+ C:/Users/wu/Desktop/omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7/RCS_code/STM32F405/FreeRTOSConfig.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/projdefs.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/portable.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/deprecated_definitions.h \
@@ -115,7 +115,7 @@ VisualGDB/Debug/usart.o: usart.cpp usart.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/list.h
 usart.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
-C:/Users/wu/Desktop/new-code/RCS_code/STM32F405/stm32f4xx_hal_conf.h:
+C:/Users/wu/Desktop/omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7/RCS_code/STM32F405/stm32f4xx_hal_conf.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/CMSIS_HAL/Device/ST/STM32F4xx/Include/stm32f4xx.h:
@@ -218,7 +218,7 @@ C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spdifrx.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_lptim.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/FreeRTOS.h:
-C:/Users/wu/Desktop/new-code/RCS_code/STM32F405/FreeRTOSConfig.h:
+C:/Users/wu/Desktop/omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7/RCS_code/STM32F405/FreeRTOSConfig.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/projdefs.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/portable.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/deprecated_definitions.h:

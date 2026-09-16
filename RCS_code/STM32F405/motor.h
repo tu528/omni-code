@@ -53,7 +53,7 @@ public:
 	int16_t maxspeed{}, maxcurrent{};
 	Kalman currentKalman{ 1.f,40.f };
 	int temperature;
-	int32_t stopAngle;
+	int32_t  stopAngle{};
 	int32_t mode{};
 	int round_count;
 	bool pd = 0, spinning = 0;//pd:单次拨弹 spinning:一秒八发

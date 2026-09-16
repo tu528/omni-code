@@ -1,0 +1,20 @@
+# IDE / build caches
+.vs/
+.visualgdb/
+VisualGDB/
+
+# VisualGDB build output (inside STM32F405)
+STM32F405/VisualGDB/
+
+# object / binary / intermediate files
+*.o
+*.elf
+*.bin
+*.rsp
+*.dep
+*.ipch
+*.db
+
+# per-user settings
+*.vcxproj.user
+*.vgdbsettings.*.user

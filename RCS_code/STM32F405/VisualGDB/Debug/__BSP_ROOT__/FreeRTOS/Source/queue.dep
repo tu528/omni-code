@@ -26,7 +26,7 @@ VisualGDB/Debug/__BSP_ROOT__/FreeRTOS/Source/queue.o: \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\stdint.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\sys\_intsup.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\sys\_stdint.h \
- C:/Users/wu/Desktop/new-code/RCS_code/STM32F405/FreeRTOSConfig.h \
+ C:/Users/wu/Desktop/omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7/RCS_code/STM32F405/FreeRTOSConfig.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/projdefs.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/portable.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/deprecated_definitions.h \
@@ -61,7 +61,7 @@ c:\sysgcc\arm-eabi\lib\gcc\arm-none-eabi\10.3.1\include\stdint.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\stdint.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\sys\_intsup.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\sys\_stdint.h:
-C:/Users/wu/Desktop/new-code/RCS_code/STM32F405/FreeRTOSConfig.h:
+C:/Users/wu/Desktop/omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7/RCS_code/STM32F405/FreeRTOSConfig.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/projdefs.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/portable.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/deprecated_definitions.h:

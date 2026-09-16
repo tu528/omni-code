@@ -8,7 +8,7 @@
 void buffer_append_int32(uint8_t* buffer, int32_t number, int16_t* index) {
 	buffer[(*index)++] = number >> 24;
 	buffer[(*index)++] = number >> 16;
-	buffer[(*index)++] = number >> 8;
+	buffer[(*index)++] = number >> 8;																					
 	buffer[(*index)++] = number;
 }
 void buffer_append_int16(uint8_t* buffer, int16_t number, int16_t* index) {

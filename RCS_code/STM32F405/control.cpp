@@ -21,34 +21,51 @@ void CONTROL::Init(std::vector<Motor*> motor)
 		switch (motor[i]->function)
 		{
 		case(function_type::chassis):
-			chassis_motor[num1++] = motor[i];
+			if (num1 < CHASSIS_MOTOR_NUM)
+				chassis_motor[num1++] = motor[i];
 			break;
 		case(function_type::pantile):
-			pantile_motor[num2++] = motor[i];
+			if (num2 < PANTILE_MOTOR_NUM)
+				pantile_motor[num2++] = motor[i];
 			break;
 		case(function_type::shooter):
-			shooter_motor[num3++] = motor[i];
+			if (num3 < SHOOTER_MOTOR_NUM)
+				shooter_motor[num3++] = motor[i];
 			break;
 		case(function_type::supply):
-			supply_motor[num4]->spinning = false;
-			supply_motor[num4]->need_curcircle = false;
-			supply_motor[num4++] = motor[i];
+			if (num4 < SUPPLY_MOTOR_NUM)
+			{
+				supply_motor[num4] = motor[i];
+				supply_motor[num4]->spinning = false;
+				supply_motor[num4]->need_curcircle = false;
+				num4++;
+			}
+			break;
 		default:
 			break;
 		}
 	}
+	ctrl.pantile.mark_yaw = para.initial_yaw;
+	ctrl.pantile.mark_pitch = para.initial_pitch;
 	pantile_motor[PANTILE::TYPE::PITCH]->setangle = para.initial_pitch;
-	pantile_motor[PANTILE::TYPE::YAW]->setangle = para.initial_yaw;
+	can1_motor[4].setangle = para.initial_yaw;
 }
 
-void CONTROL::Control_Pantile(int32_t ch_yaw, int32_t ch_pitch)
+void CONTROL::Control_Pantile(float ch_yaw, float ch_pitch)//手动控制
 {
 	ch_pitch *= (-1.f);
 	ch_yaw *= (1.f);//方向相反修改这里正负
-	float adjangle = this->pantile.sensitivity * 2;
+	float adjangle = this->pantile.sensitivity * 3.f;
 
-	ctrl.pantile.mark_pitch -= (float)(adjangle * ch_pitch);
 	ctrl.pantile.mark_yaw -= (float)(adjangle * ch_yaw);
+
+	DMmotor[2].setSpeed = 1.5;
+	DMmotor[2].setPos += (float)(adjangle * ch_pitch);
+	if (DMmotor[2].setPos >= 0.35f) DMmotor[2].setPos = 0.35f;
+	if (DMmotor[2].setPos <= -0.324f) DMmotor[2].setPos = -0.324f;
+
+	//ctrl.pantile.mark_pitch -= (float)(adjangle * ch_pitch);
+	
 }
 
 void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU frameOfReference)
@@ -66,7 +83,7 @@ void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU fram
 			mark_yaw += pantile_PID[PANTILE::YAW].Delta(delta);
 
 	}
-	else if (type == PITCH)
+	/*else if (type == PITCH)
 	{
 		delta = degreeToMechanical(ctrl.GetDelta(angleKeep - frameOfReference.GetAnglePitch()));
 		if (delta <= -4096.f)
@@ -77,7 +94,7 @@ void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU fram
 		{
 			mark_pitch += pantile_PID[PANTILE::PITCH].Delta(delta);
 		}
-	}
+	}*/
 }
 
 void CONTROL::CHASSIS::Keep_Direction()
@@ -90,10 +107,13 @@ void CONTROL::CHASSIS::Update()
 {
 	if (ctrl.mode == RESET)
 	{
-		can1_motor[0].testspeed = 100;
-		can1_motor[1].testspeed = 100;
-		can1_motor[2].testspeed = 100;
-		can1_motor[3].testspeed = 100;
+		speedx = 0;
+		speedy = 0;
+		speedz = 0;
+		can1_motor[0].setspeed = 0;
+		can1_motor[1].setspeed = 0;
+		can1_motor[2].setspeed = 0;
+		can1_motor[3].setspeed = 0;	
 	}
 	else if (ctrl.mode == CONTROL::TEST)
 	{
@@ -101,36 +121,51 @@ void CONTROL::CHASSIS::Update()
 		speedy = ctrl.chassis.speedy;
 		speedz = ctrl.chassis.speedz;
 
-		/*uint32_t ramp_slope;
+		uint32_t ramp_slope;
 		{
 		ramp_slope = (fabsf(speedz) > (fabsf(speedx) + fabsf(speedy))) 
 			    ? 190 * 5
 				: 150 * 5;
-		}*/
+		}
+		float target2 = clamp_speed(-speedy * 0.707f - speedx * 0.707f + speedz);
+		float target3 = clamp_speed(-speedy * 0.707f + speedx * 0.707f + speedz);
+		float target0 = clamp_speed( speedy * 0.707f + speedx * 0.707f + speedz);
+		float target1 = clamp_speed( speedy * 0.707f - speedx * 0.707f + speedz);
 
-		float target0 = clamp_speed(-speedy * 0.707f - speedx * 0.707f + speedz);
-		float target1 = clamp_speed(-speedy * 0.707f + speedx * 0.707f + speedz);
-		float target2 = clamp_speed( speedy * 0.707f + speedx * 0.707f + speedz);
-		float target3 = clamp_speed( speedy * 0.707f - speedx * 0.707f + speedz);
+		can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
+		can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
+		can1_motor[2].setspeed = (int32_t)Ramp(target2, can1_motor[2].setspeed, ramp_slope);
+		can1_motor[3].setspeed = (int32_t)Ramp(target3, can1_motor[3].setspeed, ramp_slope);
 
-		/*can1_motor[0].testspeed = (int32_t)Ramp(target0, can1_motor[0].testspeed, ramp_slope);
-		can1_motor[1].testspeed = (int32_t)Ramp(target1, can1_motor[1].testspeed, ramp_slope);
-		can1_motor[2].testspeed = (int32_t)Ramp(target2, can1_motor[2].testspeed, ramp_slope);
-		can1_motor[3].testspeed = (int32_t)Ramp(target3, can1_motor[3].testspeed, ramp_slope);*/
-
-		can2_motor[0].testspeed = (int32_t)target0;
-		//can1_motor[1].testspeed = (int32_t)target1;
-		//can1_motor[2].testspeed = (int32_t)target2;
-		//can1_motor[3].testspeed = (int32_t)target3;
 	}
+	else if (ctrl.mode == CONTROL::FIRE)
+	{
+
+	}
+
 }
 
 void CONTROL::PANTILE::Update()
 {
 	if (ctrl.mode == RESET)
 	{
-		mark_yaw = para.initial_yaw;
-		mark_pitch = para.initial_pitch;
+		can1_motor[4].setangle = para.initial_yaw;
+		DMmotor[2].setPos = 0;
+	}
+	else if (ctrl.mode == CONTROL::TEST)
+	{
+		if (mark_yaw > 8192.0)mark_yaw -= 8192.0;
+		if (mark_yaw < 0.0)mark_yaw += 8192.0;
+		can1_motor[4].setangle = mark_yaw;
+
+		DMmotor[2].setPos = mark_pitch;
+
+	}
+	else if (ctrl.mode == CONTROL::FIRE)
+	{
+		if (mark_yaw > 8192.0)mark_yaw -= 8192.0;
+		if (mark_yaw < 0.0)mark_yaw += 8192.0;
+		can1_motor[4].setangle = mark_yaw;
 	}
 }
 
@@ -138,7 +173,11 @@ void CONTROL::SHOOTER::Update()
 {
 	if (ctrl.mode == RESET)
 	{
-
+		
+	}
+	else if (ctrl.mode == CONTROL::TEST)
+	{
+		
 	}
 }
 
