@@ -112,7 +112,10 @@ void RC::RC_Control() {
 
 		case CONTROL::FIRE:
 		{
-
+			if ((rc.ch[2] >= 20 || rc.ch[2] <= -20) || (rc.ch[3] >= 20 || rc.ch[3] <= -20))
+			{
+				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / -660.f);
+			}
 		}
 			break;
 
@@ -137,7 +140,7 @@ void RC::RC_Control() {
 
 			if ((rc.ch[2] >= 20 || rc.ch[2] <= -20)|| (rc.ch[3] >= 20 || rc.ch[3] <= -20))
 			{
-				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / 660.f);
+				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / -660.f);
 			}
 			
 		}
@@ -159,15 +162,11 @@ void RC::RC_Control() {
 		}
 	}
 	else {
-		can2_motor[0].setspeed = 0;
-		can2_motor[1].setspeed = 0;
 		can2_motor[2].setspeed = 0;
 		can2_motor[3].setspeed = 0;
 		can2_motor[4].setspeed = 0;
 		can2_motor[5].setspeed = 0;
-		DMmotor[0].setSpeed = 0;
-		//DMmotor[1].setSpeed = 0;
-		//DMmotor[2].setSpeed = 0;
+		
 	}
 }
 

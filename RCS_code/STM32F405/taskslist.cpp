@@ -84,7 +84,7 @@ void MotorUpdateTask(void* pvParameters)
 		for (auto& motor : can2_motor)motor.Ontimer(can2.data, can2.temp_data);
 
 		DMmotor[0].State_Decode(can2, can2.jointidata)
-			.DMmotor_Ontimer(can2, DMmotor[1].Kp, DMmotor[1].Kd, can2.jointpdata[0]);
+			.DMmotor_Ontimer(can2, DMmotor[0].Kp, DMmotor[0].Kd, can2.jointpdata[0]);
 
 
 	vTaskDelayUntil(&xlastWakeTime, pdMS_TO_TICKS(2));//开始执行该任务之后1ms再执行该任务

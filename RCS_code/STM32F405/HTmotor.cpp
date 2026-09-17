@@ -36,12 +36,12 @@ DMMOTOR& DMMOTOR::State_Decode(CAN hcan, uint8_t idata[][8])//接收反馈数据
 void DMMOTOR::DMmotor_transmit(uint32_t id)
 {
 	//CanComm_ControlCmd(can1, CMD_RESET_MODE, id + MOTOR_MODE);//电机失力
-	can2.Transmit(id + MOTOR_MODE, can2.jointpdata[id - 1], 8);
+	can2.Transmit(3 + MOTOR_MODE, can2.jointpdata[0], 8);
 }
 
 void DMMOTOR::DMmotorinit()
 {
-	CanComm_ControlCmd(can2, CMD_MOTOR_MODE, MOTOR_MODE + 1);
+	CanComm_ControlCmd(can2, CMD_MOTOR_MODE, MOTOR_MODE + 3);
 	delay.delay_ms(1);
 }
 

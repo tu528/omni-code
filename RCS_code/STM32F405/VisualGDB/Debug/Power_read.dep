@@ -8,7 +8,7 @@ VisualGDB/Debug/Power_read.o: Power_read.cpp label.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\_newlib_version.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\sys\_intsup.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\sys\_stdint.h \
- C:/Users/wu/Desktop/omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7/RCS_code/STM32F405/FreeRTOSConfig.h \
+ C:/Users/wu/Desktop/new-code/RCS_code/STM32F405/FreeRTOSConfig.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/projdefs.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/portable.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/deprecated_definitions.h \
@@ -19,7 +19,7 @@ VisualGDB/Debug/Power_read.o: Power_read.cpp label.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/queue.h \
  Power_read.h usart.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
- C:/Users/wu/Desktop/omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7/RCS_code/STM32F405/stm32f4xx_hal_conf.h \
+ C:/Users/wu/Desktop/new-code/RCS_code/STM32F405/stm32f4xx_hal_conf.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/CMSIS_HAL/Device/ST/STM32F4xx/Include/stm32f4xx.h \
@@ -135,7 +135,7 @@ c:\sysgcc\arm-eabi\arm-none-eabi\include\sys\features.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\_newlib_version.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\sys\_intsup.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\sys\_stdint.h:
-C:/Users/wu/Desktop/omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7/RCS_code/STM32F405/FreeRTOSConfig.h:
+C:/Users/wu/Desktop/new-code/RCS_code/STM32F405/FreeRTOSConfig.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/projdefs.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/portable.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/deprecated_definitions.h:
@@ -147,7 +147,7 @@ C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32
 Power_read.h:
 usart.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
-C:/Users/wu/Desktop/omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7/RCS_code/STM32F405/stm32f4xx_hal_conf.h:
+C:/Users/wu/Desktop/new-code/RCS_code/STM32F405/stm32f4xx_hal_conf.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/CMSIS_HAL/Device/ST/STM32F4xx/Include/stm32f4xx.h:

@@ -47,7 +47,8 @@ void CONTROL::Init(std::vector<Motor*> motor)
 	}
 	ctrl.pantile.mark_yaw = para.initial_yaw;
 	ctrl.pantile.mark_pitch = para.initial_pitch;
-	pantile_motor[PANTILE::TYPE::PITCH]->setangle = para.initial_pitch;
+	DMmotor[0].setSpeed = 5.0f;	
+	DMmotor[0].setPos = para.initial_pitch;
 	can1_motor[4].setangle = para.initial_yaw;
 }
 
@@ -59,10 +60,10 @@ void CONTROL::Control_Pantile(float ch_yaw, float ch_pitch)//手动控制
 
 	ctrl.pantile.mark_yaw -= (float)(adjangle * ch_yaw);
 
-	DMmotor[2].setSpeed = 1.5;
-	DMmotor[2].setPos += (float)(adjangle * ch_pitch);
-	if (DMmotor[2].setPos >= 0.35f) DMmotor[2].setPos = 0.35f;
-	if (DMmotor[2].setPos <= -0.324f) DMmotor[2].setPos = -0.324f;
+	const float pitch_adjangle = 0.003f;   // 每周期 pitch 增量，按手感调大调小
+	ctrl.pantile.mark_pitch -= (float)(pitch_adjangle * ch_pitch);
+	if (ctrl.pantile.mark_pitch >= 0.35f)  ctrl.pantile.mark_pitch = 0.35f;
+	if (ctrl.pantile.mark_pitch <= -0.324f) ctrl.pantile.mark_pitch = -0.324f;
 
 	//ctrl.pantile.mark_pitch -= (float)(adjangle * ch_pitch);
 	
@@ -150,15 +151,14 @@ void CONTROL::PANTILE::Update()
 	if (ctrl.mode == RESET)
 	{
 		can1_motor[4].setangle = para.initial_yaw;
-		DMmotor[2].setPos = 0;
+		DMmotor[0].setPos = 0;
 	}
 	else if (ctrl.mode == CONTROL::TEST)
 	{
 		if (mark_yaw > 8192.0)mark_yaw -= 8192.0;
 		if (mark_yaw < 0.0)mark_yaw += 8192.0;
 		can1_motor[4].setangle = mark_yaw;
-
-		DMmotor[2].setPos = mark_pitch;
+		DMmotor[0].setPos = mark_pitch;
 
 	}
 	else if (ctrl.mode == CONTROL::FIRE)
@@ -166,6 +166,7 @@ void CONTROL::PANTILE::Update()
 		if (mark_yaw > 8192.0)mark_yaw -= 8192.0;
 		if (mark_yaw < 0.0)mark_yaw += 8192.0;
 		can1_motor[4].setangle = mark_yaw;
+		DMmotor[0].setPos = mark_pitch;
 	}
 }
 
@@ -173,11 +174,18 @@ void CONTROL::SHOOTER::Update()
 {
 	if (ctrl.mode == RESET)
 	{
-		
+		can2_motor[0].setspeed = 0.0f;
+		can2_motor[1].setspeed = 0.0f;
+	}
+	else if (ctrl.mode == CONTROL::FIRE)
+	{
+		can2_motor[0].setspeed = -1000.0f;
+		can2_motor[1].setspeed = 1000.0f;
 	}
 	else if (ctrl.mode == CONTROL::TEST)
 	{
-		
+		can2_motor[0].setspeed = 0.0f;
+		can2_motor[1].setspeed = 0.0f;
 	}
 }
 
