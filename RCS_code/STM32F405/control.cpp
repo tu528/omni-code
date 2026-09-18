@@ -171,7 +171,7 @@ void CONTROL::PANTILE::Update()
 	if (ctrl.mode == RESET)
 	{
 		can1_motor[4].setspeed = 0;
-		DMmotor[0].setSpeed = 0;
+		
 	}
 	else if (ctrl.mode == CONTROL::TEST)
 	{

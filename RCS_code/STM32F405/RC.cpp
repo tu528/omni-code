@@ -126,7 +126,7 @@ void RC::RC_Control()
 			{
 				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / -660.f);
 			}
-			fire_now = (rc.ch[1] >= 200 || rc.ch[1] <= -200);
+			fire_now = (rc.ch[1] >= 100 || rc.ch[1] <= -100);//单发
 
 			/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)//连发

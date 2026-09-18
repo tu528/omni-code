@@ -117,42 +117,42 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 		{
 			if (need_curcircle != 0)
 			{
-				state = 1;
+				single_state = 1;
 			}
-			if (state == 1)
+			if (single_state == 1)
 			{
 				stopAngle = angle[now]+4096;
 				if (stopAngle > 8192)
 				{
 					stopAngle -= 8192;
-					count = need_curcircle + 1;
+					single_count = need_curcircle + 1;
 				}
 				else
-					count = need_curcircle;
+					single_count = need_curcircle;
 				if (need_curcircle > 0)
 				{
 					setspeed = 500;
 				}
 				else setspeed = -500;
 				need_curcircle = 0;
-				state = 0;
+				single_state = 0;
 			}
-			if (state == 0)
+			if (single_state == 0)
 			{
 				current = pid[speed].Position(setspeed - curspeed, 10000.f);
 				setcurrent = current;
 			}
 			if (angle[now] - angle[pre] < -7000)
 			{
-				count--;
+				single_count--;
 			}
 			if (angle[now] - angle[pre] > 7000)
 			{
-				count++;
+				single_count++;
 			}
-			if (fabsl(stopAngle + 8192 * count - angle[now]) < 500)
+			if (fabsl(stopAngle + 8192 * single_count - angle[now]) < 500)
 			{
-				state = 2;
+				single_state = 2;
 				setcurrent =0;
 				current = 0;
 				shoot_mode_now = stop;
