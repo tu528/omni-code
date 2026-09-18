@@ -23,7 +23,8 @@ public:
 	int gear;
 	bool top_mode = true;
 	bool fix = false;
-
+	bool fire_last=false;//
+	bool fire_now = false;//
 	struct
 	{
 		int16_t ch[4];

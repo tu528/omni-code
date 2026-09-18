@@ -46,6 +46,10 @@ private:
 public:
 	function_type function;
 	uint16_t need_curcircle;
+	uint8_t state;//
+	uint8_t count;//
+	volatile uint8_t shoot_mode_now = stop;
+	enum shoot_mode { stop=0, running , single };//running:连续拨弹 stop:停止 single:单次拨弹
 	static int16_t getdeltaa(int16_t diff);
 	uint8_t getStatus()const;
 	int32_t current{}, curspeed{}, setcurrent{}, setspeed{}, torque_current, motor_status, motor_angle_status, sum_angle{}, testspeed{};//这个current用于输出电流或者电压
