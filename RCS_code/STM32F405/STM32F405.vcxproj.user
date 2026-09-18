@@ -2,6 +2,6 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
-    <LocalDebuggerCommandArgumentsHistory>vgdb://TargetPath=E:\下载\tem\tem\VisualGDB\Debug\STM32F405|vgdb://TargetPath=D:\RM\RCS_code\VisualGDB\Debug\STM32F405|vgdb://TargetPath=D:\RM\quanxiang\omni-code\RCS_code\VisualGDB\Debug\STM32F405|vgdb://TargetPath=C:\Users\wu\Desktop\omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7\RCS_code\VisualGDB\Debug\STM32F405|vgdb://TargetPath=C:\Users\wu\Desktop\new-code\RCS_code\VisualGDB\Debug\STM32F405|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerCommandArgumentsHistory>vgdb://TargetPath=D:\RM\RCS_code\VisualGDB\Debug\STM32F405|vgdb://TargetPath=D:\RM\quanxiang\omni-code\RCS_code\VisualGDB\Debug\STM32F405|vgdb://TargetPath=C:\Users\wu\Desktop\omni-code-82af72a6eff1fe0bf9104839a054a6fb1b39f1d7\RCS_code\VisualGDB\Debug\STM32F405|vgdb://TargetPath=C:\Users\wu\Desktop\new-code\RCS_code\VisualGDB\Debug\STM32F405|vgdb://TargetPath=E:\rcs\RCS_code\VisualGDB\Debug\STM32F405|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
 </Project>

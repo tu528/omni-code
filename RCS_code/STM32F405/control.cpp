@@ -3,6 +3,7 @@
 #include "judgement.h"
 #include "HTmotor.h"
 #include <math.h>
+#include "RC.h"
 
 #define MAX_SPEED 3000.0f
 
@@ -172,23 +173,106 @@ void CONTROL::PANTILE::Update()
 
 void CONTROL::SHOOTER::Update()
 {
-	if (ctrl.mode == RESET)
-	{
-		can2_motor[0].setspeed = 0.0f;
-		can2_motor[1].setspeed = 0.0f;
-	}
-	else if (ctrl.mode == CONTROL::FIRE)
-	{
-		can2_motor[0].setspeed = -1000.0f;
-		can2_motor[1].setspeed = 1000.0f;
-	}
-	else if (ctrl.mode == CONTROL::TEST)
-	{
-		can2_motor[0].setspeed = 0.0f;
-		can2_motor[1].setspeed = 0.0f;
-	}
-}
+	// 摩擦轮初调目标，沿用原值
+	const int32_t FRIC_SPEED = 3000;
+	const int32_t FRIC_TOLERANCE = 150;
 
+	static bool speed_tracking = false;
+	static uint32_t speed_ready_since = 0;
+	static bool single_armed = false;
+
+	uint32_t time_ms = HAL_GetTick();
+	bool fire_mode = ctrl.mode == CONTROL::FIRE;
+
+	openRub = fire_mode;
+
+	can2_motor[0].setspeed = fire_mode ? -FRIC_SPEED : 0;
+	can2_motor[1].setspeed = fire_mode ? FRIC_SPEED : 0;
+
+	bool at_speed =
+		fire_mode &&
+		std::abs(can2_motor[0].curspeed + FRIC_SPEED)
+		<= FRIC_TOLERANCE &&
+		std::abs(can2_motor[1].curspeed - FRIC_SPEED)
+		<= FRIC_TOLERANCE &&
+		can2_motor[0].temperature <= 70 &&
+		can2_motor[1].temperature <= 70 &&
+		can2_motor[2].temperature <= 70;
+
+	if (at_speed)
+	{
+		if (!speed_tracking)
+		{
+			speed_tracking = true;
+			speed_ready_since = time_ms;
+		}
+	}
+	else
+	{
+		speed_tracking = false;
+	}
+
+	// 复用当前未使用的fraction，表示摩擦轮稳定到速
+	fraction =
+		speed_tracking &&
+		static_cast<uint32_t>(
+			time_ms - speed_ready_since) >= 200;
+
+	int16_t stick = rc.rc.ch[0];
+
+	bool single_position = stick > 300;
+	bool continuous_position = stick < -300;
+	bool released = std::abs(stick) <= 300;
+
+	// 单发重新触发，只由摇杆回中决定
+	if (!fire_mode)
+	{
+		single_armed = false;
+	}
+	else if (std::abs(stick) <= 100)
+	{
+		single_armed = true;
+	}
+
+	bool single_request =
+		fire_mode &&
+		fraction &&
+		single_position &&
+		single_armed;
+
+	// 到速状态变化不会重新产生单发请求
+	if (single_request)
+	{
+		single_armed = false;
+	}
+
+	supply_bullet =
+		fire_mode && (single_position || continuous_position);
+
+	taskENTER_CRITICAL();
+
+	Motor& feeder = can2_motor[2];
+
+	if (!fire_mode || released || !fraction)
+	{
+		feeder.spinning = false;
+		feeder.need_curcircle = 0;
+	}
+	else
+	{
+		feeder.spinning = continuous_position;
+
+		// 正在执行或暂停的一格，不再额外排队
+		if (single_request &&
+			!feeder.pd &&
+			feeder.need_curcircle == 0)
+		{
+			feeder.need_curcircle = 1;
+		}
+	}
+
+	taskEXIT_CRITICAL();
+}
 float CONTROL::CHASSIS::Ramp(float setval, float curval, uint32_t RampSlope)//防止电机速度变化过快，导致电流过大，电机烧毁
 {
 
