@@ -2,6 +2,7 @@
 #include "RC.h"
 #include "control.h"
 #include "HTmotor.h"
+#include "xuc.h"
 
 void RC::Init(UART* huart, USART_TypeDef* Instance, const uint32_t BaudRate)
 {
@@ -42,7 +43,7 @@ void RC::RC_CheckState() {
 		break;
 
 	case RC_STATE(UP, MID):
-		ctrl.mode = CONTROL::TEST;
+		ctrl.mode = CONTROL::AUTOAIM;
 		break;
 
 	case RC_STATE(UP, DOWN):
@@ -84,9 +85,13 @@ void RC::RC_Control()
 
 	if (ctrl.mode != CONTROL::RESET)
 	{
-		if (ctrl.mode != CONTROL::FIRE)
+		if (ctrl.mode != CONTROL::FIRE&& ctrl.mode != CONTROL::AUTOAIM)
 		{
 			can2_motor[2].shoot_mode_now = Motor::stop;//Ç¿ÖÆ¹Ø±Õ²¦µ¯ÅÌ
+		}
+		if ( ctrl.mode != CONTROL::AUTOAIM)
+		{
+			xuc.Tx_TJ.mode_TJ = 0;
 		}
 		switch (ctrl.mode)
 		{
@@ -111,12 +116,12 @@ void RC::RC_Control()
 			else
 			{
 				ctrl.chassis.speedz = 0;
-		}
-		break;
+			}
+			break;
 
 		case CONTROL::AUTOAIM:
 		{
-
+			xuc.Tx_TJ.mode_TJ = 1;
 		}
 		break;
 
@@ -133,27 +138,27 @@ void RC::RC_Control()
 			{
 				can2_motor[2].shoot_mode_now = Motor::running;
 			}
-			
+
 			else if (fire_now && !fire_last)
 			{
 				can2_motor[2].need_curcircle = 4;
 				can2_motor[2].shoot_mode_now = Motor::single;
 			}
-		    else if(can2_motor[2].shoot_mode_now != Motor::single)
+			else if (can2_motor[2].shoot_mode_now != Motor::single)
 			{
 				can2_motor[2].shoot_mode_now = Motor::stop;
-				
+
 			}
 			fire_last = fire_now;
 		}
 
-			break;
+		break;
 
 		case CONTROL::TEST:
 		{
 			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
 			{
-				ctrl.chassis.speedx = (-1)*rc.ch[0] * para.max_speed / 660.f;
+				ctrl.chassis.speedx = (-1) * rc.ch[0] * para.max_speed / 660.f;
 			}
 			else
 			{
@@ -161,26 +166,24 @@ void RC::RC_Control()
 			}
 			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
 			{
-				ctrl.chassis.speedy = (-1)*rc.ch[1] * para.max_speed / 660.f;
+				ctrl.chassis.speedy = (-1) * rc.ch[1] * para.max_speed / 660.f;
 			}
 			else
 			{
 				ctrl.chassis.speedy = 0;
 			}
-
-			if ((rc.ch[2] >= 20 || rc.ch[2] <= -20)|| (rc.ch[3] >= 20 || rc.ch[3] <= -20))
+			if ((rc.ch[2] >= 20 || rc.ch[2] <= -20) || (rc.ch[3] >= 20 || rc.ch[3] <= -20))
 			{
 				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / -660.f);
 			}
-			
 		}
-			break;
+		break;
 
 		case CONTROL::SPINNING:
 		{
 
 		}
-			break;
+		break;
 
 		default:
 		{
@@ -188,12 +191,12 @@ void RC::RC_Control()
 			ctrl.chassis.speedy = 0;
 			ctrl.chassis.speedz = 0;
 		}
-			break;
+		break;
 		}
-	}
+		}
+	}else
+	xuc.Tx_TJ.mode_TJ = 0;
 	
-		
-	}
 }
 
 void RC::Decode()

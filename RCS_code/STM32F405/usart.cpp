@@ -456,6 +456,10 @@ void UART::OnUARTITHandler(void)
 		__HAL_UART_CLEAR_IDLEFLAG(&huart);
 		__HAL_DMA_DISABLE(huart.hdmarx);
 
+		const uint32_t received_length =
+			UART_MAX_LEN - __HAL_DMA_GET_COUNTER(huart.hdmarx);
+		dataDmaNum = (received_length <= UART_MAX_LEN) ? received_length : UART_MAX_LEN;
+
 		pd_Rx = xQueueOverwriteFromISR((QueueHandle_t)UartQueueHandler, m_uartrx, NULL);
 
 		DMAClearAllFlags(huart.hdmarx);

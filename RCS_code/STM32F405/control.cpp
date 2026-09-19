@@ -5,6 +5,7 @@
 #include <math.h>
 #include "RC.h"
 #include "motor.h"
+#include "xuc.h"
 
 #define MAX_SPEED 3000.0f
 
@@ -66,7 +67,6 @@ void CONTROL::Control_Pantile(float ch_yaw, float ch_pitch)//手动控制
 	ctrl.pantile.mark_pitch -= (float)(pitch_adjangle * ch_pitch);
 	if (ctrl.pantile.mark_pitch >= 0.35f)  ctrl.pantile.mark_pitch = 0.35f;
 	if (ctrl.pantile.mark_pitch <= -0.324f) ctrl.pantile.mark_pitch = -0.324f;
-
 	//ctrl.pantile.mark_pitch -= (float)(adjangle * ch_pitch);
 	
 }
@@ -77,7 +77,6 @@ void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU fram
 	if (type == YAW)
 	{
 		delta = degreeToMechanical(ctrl.GetDelta(angleKeep - frameOfReference.GetAngleYaw()));
-
 		if (delta <= -4096.f)
 			delta += 8192.f;
 		else if (delta >= 4096.f)
@@ -86,18 +85,12 @@ void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU fram
 			mark_yaw += pantile_PID[PANTILE::YAW].Delta(delta);
 
 	}
-	/*else if (type == PITCH)
+	else if (type == PITCH)
 	{
-		delta = degreeToMechanical(ctrl.GetDelta(angleKeep - frameOfReference.GetAnglePitch()));
-		if (delta <= -4096.f)
-			delta += 8192.f;
-		else if (delta >= 4096.f)
-			delta -= 8192.f;
-		if (abs(delta) >= 10.f)
-		{
-			mark_pitch += pantile_PID[PANTILE::PITCH].Delta(delta);
-		}
-	}*/
+		delta = ctrl.GetDelta(angleKeep - frameOfReference.GetAnglePitch());
+		if (abs(delta) >= 10.0f)
+			mark_pitch += pantile_PID[PANTILE::PITCH].Delta(delta) / 57.2957795f;//deg->rad
+	}
 }
 
 void CONTROL::CHASSIS::Keep_Direction()
@@ -188,13 +181,49 @@ void CONTROL::PANTILE::Update()
 		can1_motor[4].setangle = mark_yaw;
 		DMmotor[0].setPos = mark_pitch;
 	}
+	else if (ctrl.mode == CONTROL::AUTOAIM)
+	{
+
+		if (const bool xuc_active = xuc.RxFresh() && xuc.Rx_TJ.control_TJ == 1)
+		{// 上位机给的是 rad，当前 Keep_Pantile 按 deg 计算
+			const float target_yaw_deg = xuc.GetTargetYaw() * 57.2957795f;
+			const float target_pitch_deg = xuc.GetTargetPitch() * 57.2957795f;
+			Keep_Pantile(target_yaw_deg, PANTILE::YAW, imu_pantile);
+			Keep_Pantile(target_pitch_deg, PANTILE::PITCH, imu_pantile);
+		}
+		if (ctrl.pantile.mark_pitch >= 0.35f)  ctrl.pantile.mark_pitch = 0.35f;
+		if (ctrl.pantile.mark_pitch <= -0.324f) ctrl.pantile.mark_pitch = -0.324f;
+		if (mark_yaw >= 8192.0f) mark_yaw -= 8192.0f;
+		if (mark_yaw < 0.0f)    mark_yaw += 8192.0f;
+		can1_motor[4].setangle = mark_yaw;
+		DMmotor[0].setPos = mark_pitch;
+	}
 }
 
 void CONTROL::SHOOTER::Update()
 {
 	
-
-	 if (ctrl.mode == CONTROL::FIRE)
+	if (ctrl.mode == CONTROL::AUTOAIM)
+	{
+		can2_motor[0].setspeed = -2000;
+		can2_motor[1].setspeed = 2000;
+		fire_now_single = (xuc.Rx_TJ.shoot_TJ == 2 && xuc.RxFresh());
+		if (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() && xuc.Rx_TJ.control_TJ == 1)
+		{
+			can2_motor[2].shoot_mode_now = Motor::running;
+		}
+		/*else if(fire_now_single&&!(fire_last_single) )
+		{
+			can2_motor[2].shoot_mode_now = Motor::single;
+			can2_motor[2].need_curcircle = 4;
+		}*/
+		else
+		{
+			can2_motor[2].shoot_mode_now = Motor::stop;
+		}
+		fire_last_single = fire_now_single;
+	}
+	 else if (ctrl.mode == CONTROL::FIRE)
 	{
 		can2_motor[0].setspeed = -2000;
 		can2_motor[1].setspeed = 2000;

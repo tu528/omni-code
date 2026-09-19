@@ -5,6 +5,7 @@
 #include "motor.h"
 #include "imu.h"
 
+
 class CONTROL final
 {
 public:
@@ -45,6 +46,8 @@ public:
 	{
 
 		float now_bullet_speed = 0.f;
+		bool fire_last_single = false;
+		bool fire_now_single = false;
 
 		bool auto_shoot = false;
 		bool openRub = false, supply_bullet = false;
