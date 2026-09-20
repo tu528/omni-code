@@ -6,6 +6,24 @@
 #include <string.h>
 #include <cmath>
 
+//说明
+//RxPacket_TJ：视觉 → 电控 的包
+//head[2] = 'S', 'P' 帧头
+//yaw_TJ / pitch_TJ：视觉解算出的目标角度
+//shoot_TJ：是否开火
+//control_TJ：是否有效控制（0 表示视觉没在控制）
+//robot_id、CRC 等
+//TxPacket_TJ：电控 → 视觉 的包
+//head[2] = 'S', 'P'
+//mode_TJ：当前模式（由遥控器更新）
+//robot_id = 103
+//bullet_speed_TJ：弹速
+//bullet_count_TJ：弹量计数
+//imu_pitch_TJ / imu_yaw_TJ：云台当前角度（弧度）
+//target：解析后的目标角度，给云台控制用
+//fire_auto：解析后的自动开火标志
+
+
 XUC xuc;
 
 void XUC::Init(UART* huart, USART_TypeDef* Instance, uint32_t BaudRate)

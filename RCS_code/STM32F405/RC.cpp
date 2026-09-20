@@ -19,7 +19,9 @@ void RC::OnRC()
 	if (Shift_mode())
 	{
 		ctrl.pantile.keep_angle1 = imu_pantile.GetAngleYaw();
+		ctrl.pantile.pass_yaw_base = false;   //进分离模式重新以当前炮口记正前方
 	}
+	
 	
 }
 
@@ -71,7 +73,7 @@ void RC::RC_CheckState() {
 		break;
 
 	case RC_STATE(DOWN, DOWN):
-		ctrl.mode = CONTROL::TEST;
+		ctrl.mode = CONTROL::ROTATION;
 		break;
 
 	default:
@@ -98,24 +100,70 @@ void RC::RC_Control()
 		case CONTROL::ROTATION:
 		{
 
+			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
+			{
+				ctrl.chassis.speedx = (-1) * rc.ch[0] * para.max_speed / 660.f;
+			}
+			else
+			{
+				ctrl.chassis.speedx = 0;
+			}
+			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
+			{
+				ctrl.chassis.speedy = (-1) * rc.ch[1] * para.max_speed / 660.f;
+			}
+			else
+			{
+				ctrl.chassis.speedy = 0;
+			}
+			if (rc.ch[2] >= 30 || rc.ch[2] <= -30)
+			{
+				if (rc.ch[2] >= 580)
+	            {
+					rc.ch[2] = 580;
+				}
+				else if (rc.ch[2] <= -580)
+				{
+					rc.ch[2] = -580;
+				}
+				ctrl.chassis.speedz = (-1) * rc.ch[2] * para.max_speed / 660.f;
+			}
+			else
+			{
+				ctrl.chassis.speedz = 0;
+			}
+			break;
 		}
-		break;
+		    break;
 
 		case CONTROL::FOLLOW:
 		{
 
 		}
-		break;
+		    break;
 
 		case CONTROL::SEPARATE:
 		{
+			ctrl.chassis.speedz = 0;
 			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
 			{
-				ctrl.chassis.speedz = (-1) * rc.ch[0] * para.max_speed / 660.f;
+				ctrl.chassis.speedx = (-1) * rc.ch[0] * para.max_speed / 660.f;
 			}
 			else
 			{
-				ctrl.chassis.speedz = 0;
+				ctrl.chassis.speedx = 0;
+			}
+			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
+			{
+				ctrl.chassis.speedy = (-1) * rc.ch[1] * para.max_speed / 660.f;
+			}
+			else
+			{
+				ctrl.chassis.speedy = 0;
+			}
+			if ((rc.ch[2] >= 20 || rc.ch[2] <= -20) || (rc.ch[3] >= 20 || rc.ch[3] <= -20))
+			{
+				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / -660.f);
 			}
 			break;
 
@@ -123,7 +171,7 @@ void RC::RC_Control()
 		{
 			xuc.Tx_TJ.mode_TJ = 1;
 		}
-		break;
+		    break;
 
 		case CONTROL::FIRE:
 		{
@@ -152,7 +200,7 @@ void RC::RC_Control()
 			fire_last = fire_now;
 		}
 
-		break;
+		    break;
 
 		case CONTROL::TEST:
 		{
@@ -177,13 +225,13 @@ void RC::RC_Control()
 				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / -660.f);
 			}
 		}
-		break;
+		    break;
 
 		case CONTROL::SPINNING:
 		{
 
 		}
-		break;
+		    break;
 
 		default:
 		{
@@ -191,7 +239,7 @@ void RC::RC_Control()
 			ctrl.chassis.speedy = 0;
 			ctrl.chassis.speedz = 0;
 		}
-		break;
+		    break;
 		}
 		}
 	}else

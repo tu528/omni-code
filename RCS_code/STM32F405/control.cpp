@@ -81,21 +81,40 @@ void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU fram
 			delta += 8192.f;
 		else if (delta >= 4096.f)
 			delta -= 8192.f;
-		if (abs(delta) >= 10.f)
+		if (abs(delta) >= 3.0f)
 			mark_yaw += pantile_PID[PANTILE::YAW].Delta(delta);
 
 	}
 	else if (type == PITCH)
 	{
 		delta = ctrl.GetDelta(angleKeep - frameOfReference.GetAnglePitch());
-		if (abs(delta) >= 10.0f)
+		if (abs(delta) >= 3.0f)
 			mark_pitch += pantile_PID[PANTILE::PITCH].Delta(delta) / 57.2957795f;//deg->rad
 	}
 }
 
 void CONTROL::CHASSIS::Keep_Direction()
 {
-	
+	Motor* yaw = &can1_motor[4];
+
+	if (!ctrl.pantile.pass_yaw_base)
+	{
+		ctrl.pantile.yaw_base = yaw->sum_angle;
+		ctrl.pantile.pass_yaw_base = true;
+	}
+
+	//float deg = -(float)(yaw->sum_angle - ctrl.pantile.yaw_base) / 8192.0f * 360.0f;
+	//float rad = deg * (PI / 180.0f);   // 换成弧度，给 sin/cos 用
+	float rad = -(float)(yaw->sum_angle - ctrl.pantile.yaw_base) * (PI / 4096.0f);   // 换成弧度，给 sin/cos 用
+
+	float vx = (float)speedx;   // 场地前进
+	float vy = (float)speedy;   // 场地横移
+
+	float c = cosf(rad);
+	float s = sinf(rad);
+
+	speedx = (int32_t)(vx * c + vy * s);
+	speedy = (int32_t)(-vx * s + vy * c);
 
 }
 
@@ -139,6 +158,28 @@ void CONTROL::CHASSIS::Update()
 		speedx = ctrl.chassis.speedx;
 		speedy = ctrl.chassis.speedy;
 		speedz = ctrl.chassis.speedz;
+		Keep_Direction();
+		uint32_t ramp_slope;
+		{
+			ramp_slope = (fabsf(speedz) > (fabsf(speedx) + fabsf(speedy)))
+				? 190 * 5
+				: 150 * 5;
+		}
+		float target2 = clamp_speed(-speedy * 0.707f - speedx * 0.707f + speedz);
+		float target3 = clamp_speed(-speedy * 0.707f + speedx * 0.707f + speedz);
+		float target0 = clamp_speed(speedy * 0.707f + speedx * 0.707f + speedz);
+		float target1 = clamp_speed(speedy * 0.707f - speedx * 0.707f + speedz);
+
+		can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
+		can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
+		can1_motor[2].setspeed = (int32_t)Ramp(target2, can1_motor[2].setspeed, ramp_slope);
+		can1_motor[3].setspeed = (int32_t)Ramp(target3, can1_motor[3].setspeed, ramp_slope);
+	}
+	else if (ctrl.mode == CONTROL::ROTATION)
+	{
+		speedx = ctrl.chassis.speedx;
+		speedy = ctrl.chassis.speedy;
+		speedz = ctrl.chassis.speedz;
 
 		uint32_t ramp_slope;
 		{
@@ -156,7 +197,7 @@ void CONTROL::CHASSIS::Update()
 		can1_motor[2].setspeed = (int32_t)Ramp(target2, can1_motor[2].setspeed, ramp_slope);
 		can1_motor[3].setspeed = (int32_t)Ramp(target3, can1_motor[3].setspeed, ramp_slope);
 	}
-
+	
 }
 
 void CONTROL::PANTILE::Update()
@@ -168,22 +209,20 @@ void CONTROL::PANTILE::Update()
 	}
 	else if (ctrl.mode == CONTROL::TEST)
 	{
-		if (mark_yaw > 8192.0)mark_yaw -= 8192.0;
-		if (mark_yaw < 0.0)mark_yaw += 8192.0;
+		if (mark_yaw > 8192.0) mark_yaw -= 8192.0;
+		if (mark_yaw < 0.0) mark_yaw += 8192.0;
 		can1_motor[4].setangle = mark_yaw;
 		DMmotor[0].setPos = mark_pitch;
-
 	}
 	else if (ctrl.mode == CONTROL::FIRE)
 	{
-		if (mark_yaw > 8192.0)mark_yaw -= 8192.0;
-		if (mark_yaw < 0.0)mark_yaw += 8192.0;
+		if (mark_yaw > 8192.0) mark_yaw -= 8192.0;
+		if (mark_yaw < 0.0) mark_yaw += 8192.0;
 		can1_motor[4].setangle = mark_yaw;
 		DMmotor[0].setPos = mark_pitch;
 	}
 	else if (ctrl.mode == CONTROL::AUTOAIM)
 	{
-
 		if (const bool xuc_active = xuc.RxFresh() && xuc.Rx_TJ.control_TJ == 1)
 		{// 上位机给的是 rad，当前 Keep_Pantile 按 deg 计算
 			const float target_yaw_deg = xuc.GetTargetYaw() * 57.2957795f;
@@ -198,6 +237,21 @@ void CONTROL::PANTILE::Update()
 		can1_motor[4].setangle = mark_yaw;
 		DMmotor[0].setPos = mark_pitch;
 	}
+	else if (ctrl.mode == CONTROL::ROTATION)
+	{
+		ctrl.pantile.Keep_Pantile(keep_angle1, PANTILE::YAW, imu_pantile);
+		while (mark_yaw > 8192.0f) mark_yaw -= 8192.0f;
+		while (mark_yaw < 0.0f) mark_yaw += 8192.0f;
+		can1_motor[4].setangle = mark_yaw;
+		//mark_yaw -= 0.1f * ctrl.chassis.speedz;
+	}
+	else if (ctrl.mode == CONTROL::SEPARATE)
+	{
+		while (mark_yaw > 8192.0f) mark_yaw -= 8192.0f;
+		while (mark_yaw < 0.0f) mark_yaw += 8192.0f;
+		can1_motor[4].setangle = mark_yaw;
+		DMmotor[0].setPos = mark_pitch;
+	}
 }
 
 void CONTROL::SHOOTER::Update()
@@ -205,8 +259,8 @@ void CONTROL::SHOOTER::Update()
 	
 	if (ctrl.mode == CONTROL::AUTOAIM)
 	{
-		can2_motor[0].setspeed = -2000;
-		can2_motor[1].setspeed = 2000;
+		can2_motor[0].setspeed = -6000;
+		can2_motor[1].setspeed = 6000;
 		fire_now_single = (xuc.Rx_TJ.shoot_TJ == 2 && xuc.RxFresh());
 		if (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() && xuc.Rx_TJ.control_TJ == 1)
 		{

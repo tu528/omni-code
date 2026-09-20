@@ -33,7 +33,7 @@ Motor can1_motor[CAN1_MOTOR_NUM] = {
 	Motor(M3508,SPD,chassis, ID2, PID(10.f, 0.0f, 1.5f,0.f)),
 	Motor(M3508,SPD,chassis, ID3, PID(10.f, 0.0f, 1.5f,0.f)),
 	Motor(M3508,SPD,chassis, ID4, PID(10.f, 0.0f, 1.5f,0.f)),
-	Motor(M6020,POS,pantile, ID8, PID(10.f, 0.0f, 1.5f,0.f), PID(2.0f, 0.0f, 1.5f,0.f)),
+	Motor(M6020,POS,pantile, ID8, PID(20.f, 0.05f, 1.5f,0.f), PID(2.0f, 0.0f, 1.5f,0.f)),
 	Motor(M3508,SPD,chassis, ID6, PID(10.f, 0.0f, 1.5f,0.f))
 };
 Motor can2_motor[CAN2_MOTOR_NUM] = {
