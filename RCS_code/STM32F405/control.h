@@ -14,7 +14,7 @@ public:
 	Motor* pantile_motor[PANTILE_MOTOR_NUM]{};
 	Motor* shooter_motor[SHOOTER_MOTOR_NUM]{};
 	Motor* supply_motor[SUPPLY_MOTOR_NUM]{};
-	
+
 	enum MODE { TEST, RC, AUTOAIM, RESET, ROTATION, SPINNING, FOLLOW, SEPARATE, FIRE, STOP, LOCK } mode = TEST;
 	struct CHASSIS
 	{
@@ -22,7 +22,9 @@ public:
 
 		PID chassis_reset{};
 		int32_t speedx{}, speedy{}, speedz{};
-		
+		int32_t speed_x{}, speed_y{}, speed_z{};
+
+
 		void Keep_Direction();
 
 		void Update();
@@ -65,7 +67,7 @@ public:
 	CHASSIS chassis;
 	PANTILE pantile;
 	SHOOTER shooter;
-	
+
 	static int16_t Setrange(const int16_t original, const int16_t range);
 	void Control_Pantile(float ch_yaw, float ch_pitch);
 	float GetDelta(float delta);

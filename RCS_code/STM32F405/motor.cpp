@@ -105,15 +105,14 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 			setspeed = 500;
 			current = pid[speed].Position(setspeed - curspeed, 10000.f);
 			setcurrent = current;
-			
 		}
 		if (shoot_mode_now == stop)
 		{
-			setspeed = 0;	
+			setspeed = 0;
 			current = pid[speed].Position(setspeed - curspeed, 10000.f);
 			setcurrent = current;
 		}
-		if (shoot_mode_now == single) 
+		if (shoot_mode_now == single)
 		{
 			if (need_curcircle != 0)
 			{
@@ -167,7 +166,7 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 	}
 	else if (mode == SPD)
 	{
-		
+
 		current = pid[speed].Position(setspeed - curspeed, 10000.f);
 		setcurrent = current;
 	}

@@ -21,13 +21,13 @@ void RC::OnRC()
 		ctrl.pantile.keep_angle1 = imu_pantile.GetAngleYaw();
 		ctrl.pantile.pass_yaw_base = false;   //进分离模式重新以当前炮口记正前方
 	}
-	
-	
+
+
 }
 
 void RC::OnPC()
 {
-	
+
 }
 
 void RC::Update()
@@ -82,7 +82,7 @@ void RC::RC_CheckState() {
 
 }
 
-void RC::RC_Control() 
+void RC::RC_Control()
 {
 
 	if (ctrl.mode != CONTROL::RESET)
@@ -132,7 +132,7 @@ void RC::RC_Control()
 			{
 				ctrl.chassis.speedz = 0;
 			}
-			break;
+
 		}
 		    break;
 
@@ -147,24 +147,25 @@ void RC::RC_Control()
 			ctrl.chassis.speedz = 0;
 			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
 			{
-				ctrl.chassis.speedx = (-1) * rc.ch[0] * para.max_speed / 660.f;
+				ctrl.chassis.speed_x = (-1) * rc.ch[0] * para.max_speed / 660.f;
 			}
 			else
 			{
-				ctrl.chassis.speedx = 0;
+				ctrl.chassis.speed_x = 0;
 			}
 			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
 			{
-				ctrl.chassis.speedy = (-1) * rc.ch[1] * para.max_speed / 660.f;
+				ctrl.chassis.speed_y = (-1) * rc.ch[1] * para.max_speed / 660.f;
 			}
 			else
 			{
-				ctrl.chassis.speedy = 0;
+				ctrl.chassis.speed_y = 0;
 			}
 			if ((rc.ch[2] >= 20 || rc.ch[2] <= -20) || (rc.ch[3] >= 20 || rc.ch[3] <= -20))
 			{
 				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / -660.f);
 			}
+		}
 			break;
 
 		case CONTROL::AUTOAIM:
@@ -241,10 +242,10 @@ void RC::RC_Control()
 		}
 		    break;
 		}
-		}
-	}else
+	}
+	else
 	xuc.Tx_TJ.mode_TJ = 0;
-	
+
 }
 
 void RC::Decode()
@@ -280,7 +281,7 @@ void RC::Decode()
 	pc.press_l = m_frame[12];
 	pc.press_r = m_frame[13];
 
-	pc.key_h = m_frame[15];//按键的高位部分R F G Z X C 
+	pc.key_h = m_frame[15];//按键的高位部分R F G Z X C
 	pc.key_l = m_frame[14];//按键的低8位 W S A D SHIFT CTRL Q E
 
 }
