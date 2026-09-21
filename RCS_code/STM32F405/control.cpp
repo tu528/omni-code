@@ -99,8 +99,8 @@ void CONTROL::CHASSIS::Keep_Direction()
 	if (mechanical_degree < 0.0f) mechanical_degree += 8192.0f;
 	float deg = (mechanical_degree) / 8192.0f * 360.0f;
 	float rad = deg / 57.2957795f;   // 换成弧度，给 sin/cos 用
-	speedx = (int32_t)(ctrl.chassis.speed_x * cosf(rad) + ctrl.chassis.speed_y * sinf(rad));
-	speedy = (int32_t)(-ctrl.chassis.speed_x * sinf(rad) + ctrl.chassis.speed_y * cosf(rad));
+	speedx = (int32_t)(ctrl.chassis.speed_x * cosf(rad) - ctrl.chassis.speed_y * sinf(rad));
+	speedy = (int32_t)(ctrl.chassis.speed_x * sinf(rad) + ctrl.chassis.speed_y * cosf(rad));
 	//Motor* yaw = &can1_motor[4];
 
 	//if (!ctrl.pantile.pass_yaw_base)
