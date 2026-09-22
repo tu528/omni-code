@@ -101,26 +101,6 @@ void CONTROL::CHASSIS::Keep_Direction()
 	float rad = deg / 57.2957795f;   // 换成弧度，给 sin/cos 用
 	speedx = (int32_t)(ctrl.chassis.speed_x * cosf(rad) - ctrl.chassis.speed_y * sinf(rad));
 	speedy = (int32_t)(ctrl.chassis.speed_x * sinf(rad) + ctrl.chassis.speed_y * cosf(rad));
-	//Motor* yaw = &can1_motor[4];
-
-	//if (!ctrl.pantile.pass_yaw_base)
-	//{
-	//	ctrl.pantile.yaw_base = yaw->sum_angle;
-	//	ctrl.pantile.pass_yaw_base = true;
-	//}
-
-	////float deg = -(float)(yaw->sum_angle - ctrl.pantile.yaw_base) / 8192.0f * 360.0f;
-	////float rad = deg * (PI / 180.0f);   // 换成弧度，给 sin/cos 用
-	//float rad = -(float)(yaw->sum_angle - ctrl.pantile.yaw_base) * (PI / 4096.0f);   // 换成弧度，给 sin/cos 用
-
-	//float vx = (float)speedx;   // 场地前进
-	//float vy = (float)speedy;   // 场地横移
-
-	//float c = cosf(rad);
-	//float s = sinf(rad);
-
-	//speed_x = (int32_t)(vx * c + vy * s);
-	//speed_y = (int32_t)(-vx * s + vy * c);
 
 }
 
@@ -283,8 +263,8 @@ void CONTROL::SHOOTER::Update()
 	}
 	 else if (ctrl.mode == CONTROL::FIRE)
 	{
-		can2_motor[0].setspeed = -2000;
-		can2_motor[1].setspeed = 2000;
+		can2_motor[0].setspeed = -3000;
+		can2_motor[1].setspeed = 3000;
 
 	}
 	 else
