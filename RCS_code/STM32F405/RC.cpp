@@ -19,7 +19,6 @@ void RC::OnRC()
 	if (Shift_mode())
 	{
 		ctrl.pantile.keep_angle1 = imu_pantile.GetAngleYaw();
-		ctrl.pantile.pass_yaw_base = false;   //进分离模式重新以当前炮口记正前方
 	}
 
 
