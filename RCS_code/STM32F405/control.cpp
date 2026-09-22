@@ -48,9 +48,9 @@ void CONTROL::Init(std::vector<Motor*> motor)
 			break;
 		}
 	}
-	ctrl.pantile.mark_yaw = para.initial_yaw;
+	ctrl.pantile.mark_yaw = para.initial_yaw;//上电后的初始角度
 	ctrl.pantile.mark_pitch = para.initial_pitch;
-	DMmotor[0].setSpeed = 5.0f;
+	DMmotor[0].setSpeed = 5.0f;//DM恒定速度
 	DMmotor[0].setPos = para.initial_pitch;
 	can1_motor[4].setangle = para.initial_yaw;
 }
@@ -64,9 +64,9 @@ void CONTROL::Control_Pantile(float ch_yaw, float ch_pitch)//手动控制
 
 	ctrl.pantile.mark_yaw -= (float)(adjangle * ch_yaw);
 	ctrl.pantile.mark_pitch -= (float)(pitch_adjangle * ch_pitch);
-	if (ctrl.pantile.mark_pitch >= 0.35f)  ctrl.pantile.mark_pitch = 0.35f;
+	if (ctrl.pantile.mark_pitch >= 0.35f)  ctrl.pantile.mark_pitch = 0.35f;//picth上下限幅
 	if (ctrl.pantile.mark_pitch <= -0.324f) ctrl.pantile.mark_pitch = -0.324f;
-	//ctrl.pantile.mark_pitch -= (float)(adjangle * ch_pitch);
+
 
 }
 
@@ -92,7 +92,7 @@ void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU fram
 	}
 }
 
-void CONTROL::CHASSIS::Keep_Direction()
+void CONTROL::CHASSIS::Keep_Direction()//separate模式解算
 {
 	float mechanical_degree=can1_motor[4].angle[now]- para.initial_yaw;
 	if (mechanical_degree > 8192.0f) mechanical_degree -= 8192.0f;
@@ -101,6 +101,26 @@ void CONTROL::CHASSIS::Keep_Direction()
 	float rad = deg / 57.2957795f;   // 换成弧度，给 sin/cos 用
 	speedx = (int32_t)(ctrl.chassis.speed_x * cosf(rad) - ctrl.chassis.speed_y * sinf(rad));
 	speedy = (int32_t)(ctrl.chassis.speed_x * sinf(rad) + ctrl.chassis.speed_y * cosf(rad));
+	//Motor* yaw = &can1_motor[4];
+
+	//if (!ctrl.pantile.pass_yaw_base)
+	//{
+	//	ctrl.pantile.yaw_base = yaw->sum_angle;
+	//	ctrl.pantile.pass_yaw_base = true;
+	//}
+
+	////float deg = -(float)(yaw->sum_angle - ctrl.pantile.yaw_base) / 8192.0f * 360.0f;
+	////float rad = deg * (PI / 180.0f);   // 换成弧度，给 sin/cos 用
+	//float rad = -(float)(yaw->sum_angle - ctrl.pantile.yaw_base) * (PI / 4096.0f);   // 换成弧度，给 sin/cos 用
+
+	//float vx = (float)speedx;   // 场地前进
+	//float vy = (float)speedy;   // 场地横移
+
+	//float c = cosf(rad);
+	//float s = sinf(rad);
+
+	//speed_x = (int32_t)(vx * c + vy * s);
+	//speed_y = (int32_t)(-vx * s + vy * c);
 
 }
 
@@ -142,8 +162,7 @@ void CONTROL::CHASSIS::Update()
 	else if (ctrl.mode == CONTROL::SEPARATE)
 	{
 		Keep_Direction();
-
-		uint32_t ramp_slope;
+		uint32_t ramp_slope;//加速限制，防止加速过快，电流太大烧坏电机
 		{
 			ramp_slope = (fabsf(speedz) > (fabsf(speedx) + fabsf(speedy)))
 				? 190 * 5
@@ -161,7 +180,7 @@ void CONTROL::CHASSIS::Update()
 	}
 	else if (ctrl.mode == CONTROL::ROTATION)
 	{
-		speedx = ctrl.chassis.speedx;
+		speedx = ctrl.chassis.speedx;//本就是同一变量，可删
 		speedy = ctrl.chassis.speedy;
 		speedz = ctrl.chassis.speedz;
 
@@ -245,15 +264,15 @@ void CONTROL::SHOOTER::Update()
 	{
 		can2_motor[0].setspeed = -6000;
 		can2_motor[1].setspeed = 6000;
-		fire_now_single = (xuc.Rx_TJ.shoot_TJ == 2 && xuc.RxFresh());
+		/*fire_now_single = (xuc.Rx_TJ.shoot_TJ == 2 && xuc.RxFresh());*/
 		if (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() && xuc.Rx_TJ.control_TJ == 1)
 		{
-			can2_motor[2].shoot_mode_now = Motor::running;
+			can2_motor[2].shoot_mode_now = Motor::running;//目前只有连发，注释里有单发逻辑
 		}
 		/*else if(fire_now_single&&!(fire_last_single) )
 		{
 			can2_motor[2].shoot_mode_now = Motor::single;
-			can2_motor[2].need_curcircle = 4;
+			can2_motor[2].need_curcircle = 5;
 		}*/
 		else
 		{
@@ -263,8 +282,8 @@ void CONTROL::SHOOTER::Update()
 	}
 	 else if (ctrl.mode == CONTROL::FIRE)
 	{
-		can2_motor[0].setspeed = -3000;
-		can2_motor[1].setspeed = 3000;
+		can2_motor[0].setspeed = -2000;
+		can2_motor[1].setspeed = 2000;
 
 	}
 	 else

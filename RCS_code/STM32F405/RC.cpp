@@ -182,14 +182,14 @@ void RC::RC_Control()
 			fire_now = (rc.ch[1] >= 100 || rc.ch[1] <= -100);//单发
 
 			/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)//连发
+			if (rc.ch[0] >= 100 || rc.ch[0] <= -100)//连发
 			{
 				can2_motor[2].shoot_mode_now = Motor::running;
 			}
 
 			else if (fire_now && !fire_last)
 			{
-				can2_motor[2].need_curcircle = 4;
+				can2_motor[2].need_curcircle = 5;
 				can2_motor[2].shoot_mode_now = Motor::single;
 			}
 			else if (can2_motor[2].shoot_mode_now != Motor::single)

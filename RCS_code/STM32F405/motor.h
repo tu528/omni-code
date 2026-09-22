@@ -60,7 +60,7 @@ public:
 	int32_t  stopAngle{};
 	int32_t mode{};
 	int round_count;
-	bool pd = 0, spinning = 0;//pd:单次拨弹 spinning:一秒八发
+	bool pd = 0, spinning = 0;//pd:单次拨弹 spinning:一秒八发(未使用)
 	PID pid[2];
 	float Torque_constant_2006 = (0.18*10)/10000;
 	float setangle{}, angle[2]{},distance{}, initial_x{}, rota_angle{}, reset_rota_angle{}, delta_angle{};

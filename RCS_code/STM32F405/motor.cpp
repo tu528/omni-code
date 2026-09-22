@@ -120,7 +120,7 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 			}
 			if (single_state == 1)
 			{
-				stopAngle = angle[now]+4096;
+				stopAngle = angle[now]+1167;//减速比36：1，拨弹盘一圈7发，单发即为5+1/7圈
 				if (stopAngle > 8192)
 				{
 					stopAngle -= 8192;
