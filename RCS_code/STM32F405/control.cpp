@@ -67,7 +67,6 @@ void CONTROL::Control_Pantile(float ch_yaw, float ch_pitch)//手动控制
 	if (ctrl.pantile.mark_pitch >= 0.35f)  ctrl.pantile.mark_pitch = 0.35f;//picth上下限幅
 	if (ctrl.pantile.mark_pitch <= -0.324f) ctrl.pantile.mark_pitch = -0.324f;
 
-
 }
 
 void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU frameOfReference)
@@ -76,19 +75,15 @@ void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU fram
 	if (type == YAW)
 	{
 		delta = degreeToMechanical(ctrl.GetDelta(angleKeep - frameOfReference.GetAngleYaw()));
-		if (delta <= -4096.f)
-			delta += 8192.f;
-		else if (delta >= 4096.f)
-			delta -= 8192.f;
-		if (abs(delta) >= 3.0f)
-			mark_yaw += pantile_PID[PANTILE::YAW].Delta(delta);
-
+		if (delta <= -4096.f) delta += 8192.f;
+		else if (delta >= 4096.f) delta -= 8192.f;
+		if (abs(delta) >= 3.0f) mark_yaw += pantile_PID[PANTILE::YAW].Delta(delta);
 	}
 	else if (type == PITCH)
 	{
 		delta = ctrl.GetDelta(angleKeep - frameOfReference.GetAnglePitch());
 		if (abs(delta) >= 3.0f)
-			mark_pitch += pantile_PID[PANTILE::PITCH].Delta(delta) / 57.2957795f;//deg->rad
+		mark_pitch += pantile_PID[PANTILE::PITCH].Delta(delta) / 57.2957795f;//deg->rad
 	}
 }
 
@@ -101,26 +96,6 @@ void CONTROL::CHASSIS::Keep_Direction()//separate模式解算
 	float rad = deg / 57.2957795f;   // 换成弧度，给 sin/cos 用
 	speedx = (int32_t)(ctrl.chassis.speed_x * cosf(rad) - ctrl.chassis.speed_y * sinf(rad));
 	speedy = (int32_t)(ctrl.chassis.speed_x * sinf(rad) + ctrl.chassis.speed_y * cosf(rad));
-	//Motor* yaw = &can1_motor[4];
-
-	//if (!ctrl.pantile.pass_yaw_base)
-	//{
-	//	ctrl.pantile.yaw_base = yaw->sum_angle;
-	//	ctrl.pantile.pass_yaw_base = true;
-	//}
-
-	////float deg = -(float)(yaw->sum_angle - ctrl.pantile.yaw_base) / 8192.0f * 360.0f;
-	////float rad = deg * (PI / 180.0f);   // 换成弧度，给 sin/cos 用
-	//float rad = -(float)(yaw->sum_angle - ctrl.pantile.yaw_base) * (PI / 4096.0f);   // 换成弧度，给 sin/cos 用
-
-	//float vx = (float)speedx;   // 场地前进
-	//float vy = (float)speedy;   // 场地横移
-
-	//float c = cosf(rad);
-	//float s = sinf(rad);
-
-	//speed_x = (int32_t)(vx * c + vy * s);
-	//speed_y = (int32_t)(-vx * s + vy * c);
 
 }
 
@@ -131,6 +106,7 @@ void CONTROL::CHASSIS::Update()
 		speedx = 0;
 		speedy = 0;
 		speedz = 0;
+
 		can1_motor[0].setspeed = 0;
 		can1_motor[1].setspeed = 0;
 		can1_motor[2].setspeed = 0;
@@ -180,7 +156,7 @@ void CONTROL::CHASSIS::Update()
 	}
 	else if (ctrl.mode == CONTROL::ROTATION)
 	{
-		speedx = ctrl.chassis.speedx;//本就是同一变量，可删
+		speedx = ctrl.chassis.speedx;
 		speedy = ctrl.chassis.speedy;
 		speedz = ctrl.chassis.speedz;
 
@@ -208,7 +184,6 @@ void CONTROL::PANTILE::Update()
 	if (ctrl.mode == RESET)
 	{
 		can1_motor[4].setspeed = 0;
-
 	}
 	else if (ctrl.mode == CONTROL::TEST)
 	{

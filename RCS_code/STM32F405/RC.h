@@ -23,8 +23,8 @@ public:
 	int gear;
 	bool top_mode = true;
 	bool fix = false;
-	bool fire_last=false;//
-	bool fire_now = false;//
+	bool fire_last=false;//默认上一次开火是否
+	bool fire_now = false;//默认这一次开火是否
 	struct
 	{
 		int16_t ch[4];

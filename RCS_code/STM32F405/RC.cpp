@@ -179,6 +179,7 @@ void RC::RC_Control()
 			{
 				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / -660.f);
 			}
+
 			fire_now = (rc.ch[1] >= 100 || rc.ch[1] <= -100);//µ¥·¢
 
 			/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/

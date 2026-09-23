@@ -36,7 +36,6 @@ void XUC::Init(UART* huart, USART_TypeDef* Instance, uint32_t BaudRate)
     else {
         queueHandler = NULL;
     }
-
     target = {};
     fire_auto = 0;
     m_lastRxTick = 0;
@@ -64,7 +63,7 @@ void XUC::Decode()
         (m_uart->dataDmaNum <= UART_MAX_LEN) ? m_uart->dataDmaNum : UART_MAX_LEN;
     for (uint32_t i = 0; i + packLen <= received_length; ++i)
     {
-        if (frame[i] != 'S' || frame[i + 1] != 'P') {
+		if (frame[i] != 'S' || frame[i + 1] != 'P') {//S和P是帧头
             continue;
         }
 

@@ -116,9 +116,9 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 		{
 			if (need_curcircle != 0)
 			{
-				single_state = 1;
+				single_state = SINGLE_BEGIN;
 			}
-			if (single_state == 1)
+			if (single_state == SINGLE_BEGIN)
 			{
 				stopAngle = angle[now]+1167;//减速比36：1，拨弹盘一圈7发，单发即为5+1/7圈
 				if (stopAngle > 8192)
@@ -127,16 +127,22 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 					single_count = need_curcircle + 1;
 				}
 				else
+				{
 					single_count = need_curcircle;
+				}
+
 				if (need_curcircle > 0)
 				{
-					setspeed = 500;
+					setspeed = 700;
 				}
-				else setspeed = -500;
+				else
+				{
+					setspeed = -700;
+				}
 				need_curcircle = 0;
-				single_state = 0;
+				single_state = SINGLE_RUN;
 			}
-			if (single_state == 0)
+			if (single_state == SINGLE_RUN)
 			{
 				current = pid[speed].Position(setspeed - curspeed, 10000.f);
 				setcurrent = current;
@@ -151,7 +157,7 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 			}
 			if (fabsl(stopAngle + 8192 * single_count - angle[now]) < 500)
 			{
-				single_state = 2;
+				single_state = SINGLE_RESET;
 				setcurrent =0;
 				current = 0;
 				shoot_mode_now = stop;
