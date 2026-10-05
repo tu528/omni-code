@@ -82,7 +82,7 @@ void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU fram
 	else if (type == PITCH)
 	{
 		delta = ctrl.GetDelta(angleKeep - frameOfReference.GetAnglePitch());
-		if (abs(delta) >= 3.0f)
+		if (abs(delta) >= 1.0f)
 		mark_pitch += pantile_PID[PANTILE::PITCH].Delta(delta) / 57.2957795f;//deg->rad
 	}
 }
@@ -239,34 +239,34 @@ void CONTROL::SHOOTER::Update()
 	{
 		can2_motor[0].setspeed = -6000;
 		can2_motor[1].setspeed = 6000;
-		/*fire_now_single = (xuc.Rx_TJ.shoot_TJ == 2 && xuc.RxFresh());*/
-		if (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() && xuc.Rx_TJ.control_TJ == 1)
-		{
-			can2_motor[2].shoot_mode_now = Motor::running;//目前只有连发，注释里有单发逻辑
-		}
-		/*else if(fire_now_single&&!(fire_last_single) )
-		{
+		fire_now_single = (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh()&& xuc.Rx_TJ.control_TJ == 1);
+		//if (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() && xuc.Rx_TJ.control_TJ == 1)
+		//{
+		//	can2_motor[2].shoot_mode_now = Motor::running;//目前只有连发，注释里有单发逻辑
+		//}
+		
+		/*else */if(fire_now_single&&!(fire_last_single)&&can2_motor[2].single_state==Motor::SINGLE_RESET )		{
 			can2_motor[2].shoot_mode_now = Motor::single;
-			can2_motor[2].need_curcircle = 5;
-		}*/
-		else
-		{
-			can2_motor[2].shoot_mode_now = Motor::stop;
+			can2_motor[2].need_curcircle = 4;
 		}
 		fire_last_single = fire_now_single;
 	}
 	 else if (ctrl.mode == CONTROL::FIRE)
 	{
-		can2_motor[0].setspeed = -2000;
-		can2_motor[1].setspeed = 2000;
+		can2_motor[0].setspeed = -6000;
+		can2_motor[1].setspeed = 6000;
 
 	}
 	 else
 	 {
 		 can2_motor[0].setspeed = 0.0f;
 		 can2_motor[1].setspeed = 0.0f;
+		 
 	 }
-
+	if (ctrl.mode == CONTROL::RESET)
+	{
+		can2_motor[2].setspeed = 0.0f;
+	}
 }
 float CONTROL::CHASSIS::Ramp(float setval, float curval, uint32_t RampSlope)//防止电机速度变化过快，导致电流过大，电机烧毁
 {

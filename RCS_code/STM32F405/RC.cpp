@@ -15,10 +15,12 @@ void RC::OnRC()
 {
 	RC_CheckState();
 	RC_Control();
-
 	if (Shift_mode())
 	{
 		ctrl.pantile.keep_angle1 = imu_pantile.GetAngleYaw();
+		can2_motor[2].need_curcircle = 0;
+		can2_motor[2].single_count = 0;
+		can2_motor[2].shoot_mode_now == Motor::stop;
 	}
 
 
@@ -93,6 +95,7 @@ void RC::RC_Control()
 		if ( ctrl.mode != CONTROL::AUTOAIM)
 		{
 			xuc.Tx_TJ.mode_TJ = 0;
+				
 		}
 		switch (ctrl.mode)
 		{
@@ -180,17 +183,17 @@ void RC::RC_Control()
 				ctrl.Control_Pantile(rc.ch[2] * para.yaw_speed / 660.f, rc.ch[3] * para.pitch_speed / -660.f);
 			}
 
-			fire_now = (rc.ch[1] >= 100 || rc.ch[1] <= -100);//单发
+			fire_now = (rc.ch[1] >= 200 || rc.ch[1] <= -200);//单发
 
 			/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-			if (rc.ch[0] >= 100 || rc.ch[0] <= -100)//连发
+			if (rc.ch[0] >= 200 || rc.ch[0] <= -200)//连发
 			{
 				can2_motor[2].shoot_mode_now = Motor::running;
 			}
 
 			else if (fire_now && !fire_last)
 			{
-				can2_motor[2].need_curcircle = 5;
+				can2_motor[2].need_curcircle = 4;
 				can2_motor[2].shoot_mode_now = Motor::single;
 			}
 			else if (can2_motor[2].shoot_mode_now != Motor::single)
