@@ -102,17 +102,17 @@ void RC::RC_Control()
 		case CONTROL::ROTATION:
 		{
 
-			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
+			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
 			{
-				ctrl.chassis.speedx = (-1) * rc.ch[0] * para.max_speed / 660.f;
+				ctrl.chassis.speedx = (-1) * rc.ch[1] * para.max_speed / 660.f;
 			}
 			else
 			{
 				ctrl.chassis.speedx = 0;
 			}
-			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
+			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
 			{
-				ctrl.chassis.speedy = (-1) * rc.ch[1] * para.max_speed / 660.f;
+				ctrl.chassis.speedy = (-1) * rc.ch[0] * para.max_speed / 660.f;
 			}
 			else
 			{
@@ -147,17 +147,17 @@ void RC::RC_Control()
 		case CONTROL::SEPARATE:
 		{
 			ctrl.chassis.speedz = 0;
-			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
+			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
 			{
-				ctrl.chassis.speed_x = (-1) * rc.ch[0] * para.max_speed / 660.f;
+				ctrl.chassis.speed_x = (-1) * rc.ch[1] * para.max_speed / 660.f;
 			}
 			else
 			{
 				ctrl.chassis.speed_x = 0;
 			}
-			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
+			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
 			{
-				ctrl.chassis.speed_y = (-1) * rc.ch[1] * para.max_speed / 660.f;
+				ctrl.chassis.speed_y = (-1) * rc.ch[0] * para.max_speed / 660.f;
 			}
 			else
 			{
@@ -208,17 +208,17 @@ void RC::RC_Control()
 
 		case CONTROL::TEST:
 		{
-			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
+			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
 			{
-				ctrl.chassis.speedx = (-1) * rc.ch[0] * para.max_speed / 660.f;
+				ctrl.chassis.speedx = (-1) * rc.ch[1] * para.max_speed / 660.f;
 			}
 			else
 			{
 				ctrl.chassis.speedx = 0;
 			}
-			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
+			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
 			{
-				ctrl.chassis.speedy = (-1) * rc.ch[1] * para.max_speed / 660.f;
+				ctrl.chassis.speedy = (-1) * rc.ch[0] * para.max_speed / 660.f;
 			}
 			else
 			{

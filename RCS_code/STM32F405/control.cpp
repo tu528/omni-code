@@ -124,10 +124,10 @@ void CONTROL::CHASSIS::Update()
 			    ? 190 * 5
 				: 150 * 5;
 		}
-		float target2 = clamp_speed(-speedy * 0.707f - speedx * 0.707f + speedz);
-		float target3 = clamp_speed(-speedy * 0.707f + speedx * 0.707f + speedz);
-		float target0 = clamp_speed( speedy * 0.707f + speedx * 0.707f + speedz);
-		float target1 = clamp_speed( speedy * 0.707f - speedx * 0.707f + speedz);
+		float target2 = clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
+		float target3 = clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
+		float target0 = clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
+		float target1 = clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
 
 		can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
 		can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
@@ -144,10 +144,10 @@ void CONTROL::CHASSIS::Update()
 				? 190 * 5
 				: 150 * 5;
 		}
-		float target2 = clamp_speed(-speedy * 0.707f - speedx * 0.707f + speedz);
-		float target3 = clamp_speed(-speedy * 0.707f + speedx * 0.707f + speedz);
-		float target0 = clamp_speed(speedy * 0.707f + speedx * 0.707f + speedz);
-		float target1 = clamp_speed(speedy * 0.707f - speedx * 0.707f + speedz);
+		float target2 = clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
+		float target3 = clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
+		float target0 = clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
+		float target1 = clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
 
 		can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
 		can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
@@ -166,10 +166,10 @@ void CONTROL::CHASSIS::Update()
 				? 190 * 5
 				: 150 * 5;
 		}
-		float target2 = clamp_speed(-speedy * 0.707f - speedx * 0.707f + speedz);
-		float target3 = clamp_speed(-speedy * 0.707f + speedx * 0.707f + speedz);
-		float target0 = clamp_speed(speedy * 0.707f + speedx * 0.707f + speedz);
-		float target1 = clamp_speed(speedy * 0.707f - speedx * 0.707f + speedz);
+		float target2 = clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
+		float target3 = clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
+		float target0 = clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
+		float target1 = clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
 
 		can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
 		can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
