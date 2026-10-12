@@ -58,6 +58,8 @@ public:
 		bool fullheat_shoot = false;
 		bool heat_ulimit = false;
 		int16_t shoot_speed = 6000;
+		bool fire_detected = false;     // 电流尖峰检测中
+		uint32_t last_fire_tick = 0;    // 最近一次发射的 tick
 		void Update();
 	};
 

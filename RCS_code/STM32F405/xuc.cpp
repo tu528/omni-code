@@ -5,6 +5,9 @@
 #include "task.h"
 #include <string.h>
 #include <cmath>
+#include "control.h"
+#include "motor.h"
+
 
 //说明
 //RxPacket_TJ：视觉 → 电控 的包
@@ -116,6 +119,11 @@ void XUC::Encode()
 
     Tx_TJ.imu_pitch_TJ = imu_pantile.GetAnglePitch()/57.2957795f;
     Tx_TJ.imu_yaw_TJ = imu_pantile.GetAngleYaw()/57.2957795f;
+
+    Tx_TJ.fire_flag_TJ = ctrl.shooter.fire_detected ? 1u : 0u;
+    Tx_TJ.fire_tick_TJ = ctrl.shooter.last_fire_tick;
+    Tx_TJ.friction_current_TJ = (int16_t)can2_motor[0].torque_current;
+    Tx_TJ.supply_speed_TJ = (int16_t)can2_motor[2].curspeed;
 
     const uint32_t packet_size = (uint32_t)sizeof(TxPacket_TJ);
 

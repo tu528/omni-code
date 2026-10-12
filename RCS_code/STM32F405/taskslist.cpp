@@ -84,6 +84,24 @@ void MotorUpdateTask(void* pvParameters)
 
 		for (auto& motor : can2_motor)motor.Ontimer(can2.data, can2.temp_data);
 
+		int32_t cur = std::abs(can2_motor[0].torque_current) +
+			std::abs(can2_motor[1].torque_current); // 取绝对值相加，正负抵消问题
+
+		const int32_t THRESHOLD = 3000;   // 尖峰阈值，需要现场标定
+		const uint32_t DEBOUNCE = 30;     // 不应期 ms，防止一次发射被重复触发
+
+		uint32_t now = xTaskGetTickCount();
+		if (cur > THRESHOLD && !ctrl.shooter.fire_detected &&
+			(now - ctrl.shooter.last_fire_tick) > DEBOUNCE)
+		{
+			ctrl.shooter.fire_detected = true;   // 检测到一次发射
+			ctrl.shooter.last_fire_tick = now;   // 记录发射时刻
+		}
+		else if (cur <= THRESHOLD)
+		{
+			ctrl.shooter.fire_detected = false;  // 尖峰回落，允许下次触发
+		}
+
 		DMmotor[0].State_Decode(can2, can2.jointidata)
 			.DMmotor_Ontimer(can2, DMmotor[0].Kp, DMmotor[0].Kd, can2.jointpdata[0]);
 

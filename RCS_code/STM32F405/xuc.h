@@ -16,6 +16,10 @@ struct TxPacket_TJ  // lower board -> small computer
     uint16_t bullet_count_TJ;
     float imu_pitch_TJ;         // rad
     float imu_yaw_TJ;           // rad
+    uint16_t fire_flag_TJ;      // 1 = 本周期检测到发射
+    uint32_t fire_tick_TJ;      // 发射时刻的 tick
+    int16_t  friction_current_TJ; // 发电流波形给上位机看
+    int16_t  supply_speed_TJ;     // 拨弹轮实时转速 rpm
     uint16_t crc16_TJ;
 };
 
