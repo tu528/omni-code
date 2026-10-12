@@ -245,7 +245,8 @@ void CONTROL::SHOOTER::Update()
 		//	can2_motor[2].shoot_mode_now = Motor::running;//目前只有连发，注释里有单发逻辑
 		//}
 		
-		/*else */if(fire_now_single&&!(fire_last_single)&&can2_motor[2].single_state==Motor::SINGLE_RESET )		{
+		/*else */if(fire_now_single&&!(fire_last_single)&& can2_motor[2].shoot_mode_now == Motor::stop)
+		{
 			can2_motor[2].shoot_mode_now = Motor::single;
 			can2_motor[2].need_curcircle = 4;
 		}

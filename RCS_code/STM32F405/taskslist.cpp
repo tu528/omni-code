@@ -148,9 +148,10 @@ void DecodeTask(void* pvParameters)
 
 void ArmTask(void* pvParameters)
 {
+	  //上电时只发一次，之后不再重复发送
+
 	while (true)
 	{
-		//初始化达妙电机
 		DMmotor[0].DMmotorinit();
 		power.Send();
 		vTaskDelay(100);

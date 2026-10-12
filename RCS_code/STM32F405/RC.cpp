@@ -20,7 +20,7 @@ void RC::OnRC()
 		ctrl.pantile.keep_angle1 = imu_pantile.GetAngleYaw();
 		can2_motor[2].need_curcircle = 0;
 		can2_motor[2].single_count = 0;
-		can2_motor[2].shoot_mode_now == Motor::stop;
+		can2_motor[2].shoot_mode_now = Motor::stop;
 	}
 
 

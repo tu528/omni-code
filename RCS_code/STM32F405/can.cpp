@@ -9,11 +9,11 @@
 void CAN::Init(CAN_TypeDef* instance)
 {
 	hcan.Instance = instance;				//can基地址赋值
-	hcan.Init.Prescaler = 6;				//分频系数（不减一）
+	hcan.Init.Prescaler = 3;				//APB1 42MHz / 3 = 14MHz，1Mbps
 	hcan.Init.Mode = CAN_MODE_NORMAL;		//普通模式
 	hcan.Init.SJW = CAN_SJW_1TQ;			//同步段为1个字节
-	hcan.Init.BS1 = CAN_BS1_2TQ;			//相位缓冲段1为2个字节
-	hcan.Init.BS2 = CAN_BS2_4TQ;			//相位缓冲段2为4个字节
+	hcan.Init.BS1 = CAN_BS1_10TQ;			//1+10+3 = 14 TQ，采样点 11/14 = 78.6%
+	hcan.Init.BS2 = CAN_BS2_3TQ;			//采样点靠后，减少位错误
 	hcan.Init.TTCM = DISABLE;				//非时间触发通信模式
 	hcan.Init.ABOM = ENABLE;				//允许自动离线管理
 	hcan.Init.AWUM = ENABLE;				//允许自动唤醒
@@ -134,23 +134,26 @@ HAL_StatusTypeDef CAN::Transmit(const uint32_t ID, const uint8_t* const pData, c
 */
 void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 {
+	const uint32_t id = hcan->pRxMsg->StdId;
+
 	if (hcan == &can1.hcan)
-		memcpy(can1.data[hcan->pRxMsg->StdId - 0x201], hcan->pRxMsg->Data, sizeof(uint8_t) * 8);
+	{
+		if (id >= 0x201U && id <= 0x20CU)
+			memcpy(can1.data[id - 0x201U], hcan->pRxMsg->Data, sizeof(uint8_t) * 8);
+	}
 	else
 	{
-		if (hcan->pRxMsg->StdId == 1)
+		if (id == 1U)   //DM Master ID = 1 (feedback)
 		{
 			memcpy(can2.jointidata, hcan->pRxMsg->Data, sizeof(uint8_t) * 8);
 		}
-		else
+		else if (id >= 0x201U && id <= 0x20CU)
 		{
-			memcpy(can2.data[hcan->pRxMsg->StdId - 0x201], hcan->pRxMsg->Data, sizeof(uint8_t) * 8);
+			memcpy(can2.data[id - 0x201U], hcan->pRxMsg->Data, sizeof(uint8_t) * 8);
 		}
+		//other IDs are ignored to avoid out-of-bounds writes
 	}
 
-	//can2.pd_Rx = xQueueSendFromISR((QueueHandle_t)Can2QueueHadle, hcan->pRxMsg->Data, NULL);
-
-/*#### add enable can it again to solve can receive only one ID problem!!!####**/
 	__HAL_CAN_ENABLE_IT(hcan, CAN_IT_FMP0);
 }
 

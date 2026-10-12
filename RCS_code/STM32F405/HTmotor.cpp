@@ -20,7 +20,7 @@ DMMOTOR& DMMOTOR::State_Decode(CAN hcan, uint8_t idata[][8])//接收反馈数据
 {
 	//浮点型数据
 	//receive_data[0]=电机id
-	uint8_t id = ID - 0x01;
+	uint8_t id = 0;   //only one DM motor, feedback stored in jointidata[0]
 	int direct = 0;
 	int tmp_value = 0;
 	tmp_value = (idata[id][1] << 8) | (idata[id][2]);//电机位置

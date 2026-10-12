@@ -100,13 +100,13 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 	20220121--hz*/
     if (mode == ACE)
     {
-		if(shoot_mode_now == running)
+		if(shoot_mode_now == Motor::running)
 		{
 			setspeed = 500;
 			current = pid[speed].Position(setspeed - curspeed, 10000.f);
 			setcurrent = current;
 		}
-		if (shoot_mode_now == stop)
+		if (shoot_mode_now == Motor::stop)
 		{
 			setspeed = 0;
 			need_curcircle = 0;
@@ -114,7 +114,7 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 			current = pid[speed].Position(setspeed - curspeed, 10000.f);
 			setcurrent = current;
 		}
-		if (shoot_mode_now == single  )
+		if (shoot_mode_now == Motor::single  )
 		{
 			if (need_curcircle != 0 )
 			{
@@ -137,10 +137,10 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 				{
 					setspeed = 700;
 				}
-				else
+				/*else
 				{
 					setspeed = -700;
-				}
+				}*/
 				need_curcircle = 0;
 				single_state = SINGLE_RUN;
 			}
@@ -149,7 +149,7 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 				current = pid[speed].Position(setspeed - curspeed, 10000.f);
 				setcurrent = current;
 			}
-			if (angle[now] - angle[pre] < -7000)
+			if (angle[now] - angle[pre] < -7000 && single_count > 0) 
 			{
 				single_count--;
 			}
@@ -157,15 +157,23 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 			{
 				single_count++;
 			}
-			if (fabsl(stopAngle + 8192 * single_count - angle[now]) < 250)
+			if (fabsl(stopAngle + 8192 * single_count - angle[now]) < 350)
 			{
 				single_state = SINGLE_RESET;
 				setcurrent =0;
 				current = 0;
-				shoot_mode_now = stop;
+				shoot_mode_now = Motor::stop;
 			}
 		}
     }
+	//single_target = sum_angle + 2700 + 8192 * need_curcircle;  // 按实际方向/圈数调整
+	//	if (sum_angle >= single_target) {   // 冲过目标立刻停
+	//		single_state = SINGLE_RESET;
+	//		current = 0;
+	//		setcurrent = 0;
+	//		shoot_mode_now = stop;
+	//	}备用方案
+
 	else if (mode == POS)
 	{
 		setspeed = pid[position].Position(getdeltaa((int16_t)(setangle - angle[0])),10000.f);//最短路径

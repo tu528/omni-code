@@ -52,7 +52,7 @@ public:
 		SINGLE_RESET,  //单发模式完成
 	};
 	single_state_e single_state = SINGLE_RESET;
-	uint8_t single_count;//
+	int8_t single_count;//
 	volatile uint8_t shoot_mode_now = stop;
 	enum shoot_mode { stop=0, running , single };//running:连续拨弹 stop:停止 single:单次拨弹
 	static int16_t getdeltaa(int16_t diff);
