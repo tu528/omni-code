@@ -8,6 +8,8 @@
 #include "xuc.h"
 
 #define MAX_SPEED 3000.0f
+#define DEAD_FORWARD_SPEED 2000.0f   // 前进速度，实验值，满速约 3000
+
 
 float clamp_speed(float target)
 {
@@ -94,8 +96,8 @@ void CONTROL::CHASSIS::Keep_Direction()//separate模式解算
 	if (mechanical_degree < 0.0f) mechanical_degree += 8192.0f;
 	float deg = (mechanical_degree) / 8192.0f * 360.0f;
 	float rad = deg / 57.2957795f;   // 换成弧度，给 sin/cos 用
-	speedx = (int32_t)(ctrl.chassis.speed_x * cosf(rad) - ctrl.chassis.speed_y * sinf(rad));
-	speedy = (int32_t)(ctrl.chassis.speed_x * sinf(rad) + ctrl.chassis.speed_y * cosf(rad));
+	speedx =  (int32_t)(ctrl.chassis.speed_x * cosf(rad) + ctrl.chassis.speed_y * sinf(rad));
+	speedy =  (int32_t)(-ctrl.chassis.speed_x * sinf(rad) + ctrl.chassis.speed_y * cosf(rad));
 
 }
 
@@ -124,10 +126,10 @@ void CONTROL::CHASSIS::Update()
 			    ? 190 * 5
 				: 150 * 5;
 		}
-		float target2 = clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
-		float target3 = clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
-		float target0 = clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
-		float target1 = clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
+		float target2 = -clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
+		float target3 = -clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
+		float target0 = -clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
+		float target1 = -clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
 
 		can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
 		can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
@@ -144,10 +146,10 @@ void CONTROL::CHASSIS::Update()
 				? 190 * 5
 				: 150 * 5;
 		}
-		float target2 = clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
-		float target3 = clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
-		float target0 = clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
-		float target1 = clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
+		float target2 = -clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
+		float target3 = -clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
+		float target0 = -clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
+		float target1 = -clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
 
 		can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
 		can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
@@ -176,7 +178,46 @@ void CONTROL::CHASSIS::Update()
 		can1_motor[2].setspeed = (int32_t)Ramp(target2, can1_motor[2].setspeed, ramp_slope);
 		can1_motor[3].setspeed = (int32_t)Ramp(target3, can1_motor[3].setspeed, ramp_slope);
 	}
+	else if (ctrl.mode == CONTROL::DEAD)
+	{
+		if (!dead_started)
+		{
+			dead_d0 = can1_motor[0].distance;
+			dead_d1 = can1_motor[1].distance;
+			dead_d2 = can1_motor[2].distance;
+			dead_d3 = can1_motor[3].distance;
+			dead_started = true;
+		}
 
+		ctrl.chassis.speed_x = DEAD_FORWARD_SPEED;   
+		ctrl.chassis.speed_y = 0;
+		ctrl.chassis.speed_z = 0;
+
+		// 正运动学：四轮增量 → 整车前进位移（mm）
+		float d0 = can1_motor[0].distance - dead_d0;
+		float d1 = can1_motor[1].distance - dead_d1;
+		float d2 = can1_motor[2].distance - dead_d2;
+		float d3 = can1_motor[3].distance - dead_d3;
+		float dx = (d0 + d1 - d2 - d3) * 0.707f / 2.0f;
+
+		if (dx <= -0.0f)               // 前进满 1 米就停
+			ctrl.chassis.speed_x = 0;
+
+		Keep_Direction();
+
+		uint32_t ramp_slope = (fabsf(speedz) > (fabsf(speedx) + fabsf(speedy))) ? 190 * 5 : 150 *
+			5;
+		float target2 = -clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
+		float target3 = -clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
+		float target0 = -clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
+		float target1 = -clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
+
+		can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
+		can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
+		can1_motor[2].setspeed = (int32_t)Ramp(target2, can1_motor[2].setspeed, ramp_slope);
+		can1_motor[3].setspeed = (int32_t)Ramp(target3, can1_motor[3].setspeed, ramp_slope);
+	
+	}
 }
 
 void CONTROL::PANTILE::Update()

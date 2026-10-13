@@ -15,7 +15,7 @@ public:
 	Motor* shooter_motor[SHOOTER_MOTOR_NUM]{};
 	Motor* supply_motor[SUPPLY_MOTOR_NUM]{};
 
-	enum MODE { TEST, RC, AUTOAIM, RESET, ROTATION, SPINNING, FOLLOW, SEPARATE, FIRE, STOP, LOCK } mode = TEST;
+	enum MODE { TEST, RC, AUTOAIM, RESET, ROTATION, SPINNING, FOLLOW, SEPARATE, FIRE, STOP, LOCK, DEAD } mode = TEST;
 	struct CHASSIS
 	{
 
@@ -24,6 +24,8 @@ public:
 		int32_t speedx{}, speedy{}, speedz{};
 		int32_t speed_x{}, speed_y{}, speed_z{};
 
+		bool  dead_started = false;
+		float dead_d0, dead_d1, dead_d2, dead_d3;   // 四轮起点 distance
 
 		void Keep_Direction();
 

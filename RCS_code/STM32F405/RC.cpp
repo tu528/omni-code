@@ -21,6 +21,8 @@ void RC::OnRC()
 		can2_motor[2].need_curcircle = 0;
 		can2_motor[2].single_count = 0;
 		can2_motor[2].shoot_mode_now = Motor::stop;
+
+		ctrl.chassis.dead_started = false;   // ÐÂÔö
 	}
 
 
@@ -62,7 +64,7 @@ void RC::RC_CheckState() {
 		break;
 
 	case RC_STATE(MID, DOWN):
-		ctrl.mode = CONTROL::TEST;
+		ctrl.mode = CONTROL::DEAD;
 		break;
 
 	case RC_STATE(DOWN, UP):
@@ -128,7 +130,7 @@ void RC::RC_Control()
 				{
 					rc.ch[2] = -580;
 				}
-				ctrl.chassis.speedz = (-1) * rc.ch[2] * para.max_speed / 660.f;
+				ctrl.chassis.speedz =  rc.ch[2] * para.max_speed / 660.f;
 			}
 			else
 			{
@@ -149,7 +151,7 @@ void RC::RC_Control()
 			ctrl.chassis.speedz = 0;
 			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
 			{
-				ctrl.chassis.speed_x = (-1) * rc.ch[1] * para.max_speed / 660.f;
+				ctrl.chassis.speed_x =   rc.ch[1] * para.max_speed / 660.f;
 			}
 			else
 			{
@@ -157,7 +159,7 @@ void RC::RC_Control()
 			}
 			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
 			{
-				ctrl.chassis.speed_y = (-1) * rc.ch[0] * para.max_speed / 660.f;
+				ctrl.chassis.speed_y =  rc.ch[0] * para.max_speed / 660.f;
 			}
 			else
 			{
@@ -210,7 +212,7 @@ void RC::RC_Control()
 		{
 			if (rc.ch[1] >= 30 || rc.ch[1] <= -30)
 			{
-				ctrl.chassis.speedx = (-1) * rc.ch[1] * para.max_speed / 660.f;
+				ctrl.chassis.speedx =  rc.ch[1] * para.max_speed / 660.f;
 			}
 			else
 			{
@@ -218,7 +220,7 @@ void RC::RC_Control()
 			}
 			if (rc.ch[0] >= 30 || rc.ch[0] <= -30)
 			{
-				ctrl.chassis.speedy = (-1) * rc.ch[0] * para.max_speed / 660.f;
+				ctrl.chassis.speedy =  rc.ch[0] * para.max_speed / 660.f;
 			}
 			else
 			{
@@ -232,6 +234,12 @@ void RC::RC_Control()
 		    break;
 
 		case CONTROL::SPINNING:
+		{
+
+		}
+		    break;
+
+		case CONTROL::DEAD:
 		{
 
 		}
