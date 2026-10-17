@@ -1,0 +1,120 @@
+/* ===================================================================
+   LpmsControl2 - Light Theme
+   =================================================================== */
+
+/* --- Global defaults ---------------------------------------------- */
+QWidget {
+    font-family: Consolas, "Microsoft YaHei UI", "Yu Gothic UI", "Meiryo", sans-serif;
+}
+
+
+/* --- Main window & frames ----------------------------------------- */
+QMainWindow {
+    background-color: #ffffff;
+}
+
+QFrame {
+}
+
+/* --- Menu bar ----------------------------------------------------- */
+QMenuBar {
+    background-color: #e8e8e8;
+    border-bottom: 1px solid #c8c8c8;
+}
+
+QMenuBar::item {
+    background: transparent;
+    padding: 4px 8px;
+}
+
+QMenuBar::item:selected {
+    background-color: #0078d4;
+    color: #ffffff;
+}
+
+QMenu {
+    background-color: #ffffff;
+    border: 1px solid #c8c8c8;
+}
+
+QMenu::item {
+    padding: 4px 24px 4px 8px;
+}
+
+QMenu::item:selected {
+    background-color: #0078d4;
+    color: #ffffff;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #d0d0d0;
+    margin: 4px 8px;
+}
+
+/* --- Status bar --------------------------------------------------- */
+QStatusBar {
+    background-color: #f0f0f0;
+    border-top: 1px solid #c8c8c8;
+    color: #444444;
+}
+/* --- Tab widget --------------------------------------------------- */
+QTabWidget::pane {
+    border: 1px solid #c0c0c0;
+    background-color: #ffffff;
+    top: -1px;
+}
+
+QTabBar[shape="0"]::tab {
+    border: 1px solid #c0c0c0;
+    background-color: #f0f0f0;
+    padding: 5px 12px;
+    margin-top: 2px;           /* Optional: slightly shift it */
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+/* --- When TabBar is on TOP --- */
+QTabBar[shape="0"]::tab:selected {
+    background-color: #ffffff;
+    border-bottom: none;
+    margin-top: 0px;           /* Optional: slightly shift it */
+}
+
+/* --- When TabBar is on BOTTOM --- */
+QTabBar[shape="1"]::tab {
+    border: 1px solid #c0c0c0;
+    background-color: #f0f0f0;
+    padding: 5px 12px;
+    margin-bottom: 2px;           /* Optional: slightly shift it */
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+QTabBar[shape="1"]::tab:selected {
+    background-color: #ffffff;
+    border-top: none;
+    margin-bottom: 0px;
+}
+
+QGroupBox {
+	background-color: white;
+}
+
+QComboBox:disabled {
+    background-color: #eeeeee; /* Light gray background */
+    color: #a1a1a1;            /* Faded text */
+    border: 1px solid #cccccc;
+}
+
+QSplitter {
+	color: white;
+	background-color: white;
+}
+
+QSplitter::handle { 
+	background-color: white;
+}
+
+QGLWidget {
+	background-color: white;
+}

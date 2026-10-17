@@ -31,7 +31,7 @@ void SUPERCAP::Init(UART* huart, uint32_t baud, USART_TypeDef* uart_base)
 
 void SUPERCAP::decode()
 {
-	pd_Rx = xQueueReceive(*queueHandler, rxData, NULL);
+	pd_Rx = xQueueReceive(*queueHandler, rxData, 0);
 
 	if (Rxsuper.I == I_pre) { count += 1; }
 	else { count = 0; }

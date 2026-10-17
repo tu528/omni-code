@@ -26,13 +26,21 @@ struct TxPacket_TJ  // lower board -> small computer
 struct RxPacket_TJ  // small computer -> lower board
 {
     uint8_t head[2];
-    uint8_t control_TJ;         //暂时无用
+    uint8_t control_TJ;         //0停止/无控制，1允许自瞄，2停止射击并返程
 	uint8_t shoot_TJ;           //1连发；2单发；0停止
     float yaw_TJ;               // rad; bounded absolute yaw target
     float pitch_TJ;             // rad; bounded absolute pitch target in Phase 2D.5
     uint16_t crc16_TJ;
 };
 #pragma pack(pop)
+
+// 上位机通过RxPacket_TJ::control_TJ发送的控制命令。
+enum XUC_CONTROL_COMMAND : uint8_t
+{
+    XUC_CONTROL_STOP = 0,
+    XUC_CONTROL_AUTOAIM = 1,
+    XUC_CONTROL_RETURN = 2
+};
 
 class XUC
 {

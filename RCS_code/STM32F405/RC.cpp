@@ -22,9 +22,15 @@ void RC::OnRC()
 		can2_motor[2].single_count = 0;
 		can2_motor[2].shoot_mode_now = Motor::stop;
 
-		ctrl.chassis.dead_started = false;   // 新增
+		ctrl.chassis.dead_started = false; 
+		ctrl.chassis.dead_part = 0;
+		ctrl.chassis.real_started = false;
+		ctrl.chassis.real_auto_active = false;
+		ctrl.chassis.real_returning = false;
+		ctrl.chassis.real_return_part = 0;
+		ctrl.chassis.real_completed = false;
+		ctrl.chassis.real_part = 0;
 	}
-
 
 }
 
@@ -39,8 +45,13 @@ void RC::Update()
 	OnPC();
 }
 
-void RC::RC_CheckState() {
-
+void RC::RC_CheckState()
+{
+	// REAL automatic mode keeps the RC switch from overwriting AUTOAIM.
+	if (ctrl.chassis.real_auto_active || ctrl.chassis.real_completed)
+	{
+		return;
+	}
 	switch (RC_STATE(rc.s[0], rc.s[1]))
 	{
 	case RC_STATE(UP, UP):
@@ -72,7 +83,7 @@ void RC::RC_CheckState() {
 		break;
 
 	case RC_STATE(DOWN, MID):
-		ctrl.mode = CONTROL::TEST;
+		ctrl.mode = CONTROL::REAL;
 		break;
 
 	case RC_STATE(DOWN, DOWN):
@@ -245,6 +256,12 @@ void RC::RC_Control()
 		}
 		    break;
 
+		case CONTROL::REAL:
+		{
+
+		}
+		    break;
+
 		default:
 		{
 			ctrl.chassis.speedx = 0;
@@ -265,7 +282,7 @@ void RC::Decode()
 		return;  // 或者报错
 	}
 	else {
-		pd_Rx = xQueueReceive(*queueHandler, m_frame, NULL);
+		pd_Rx = xQueueReceive(*queueHandler, m_frame, 0);
 	}
 
 	if (sizeof(m_frame) < 18) return;

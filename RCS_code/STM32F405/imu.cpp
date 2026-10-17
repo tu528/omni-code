@@ -14,7 +14,7 @@ void IMU::Decode()
 		return;  // ªÚ’ﬂ±®¥Ì
 	}
 	else {
-		pd_Rx = xQueueReceive(*queueHandler, rxData, NULL);
+		pd_Rx = xQueueReceive(*queueHandler, rxData, 0);
 	}
 
 	if (type == IMU601)
