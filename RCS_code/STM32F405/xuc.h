@@ -26,8 +26,8 @@ struct TxPacket_TJ  // lower board -> small computer
 struct RxPacket_TJ  // small computer -> lower board
 {
     uint8_t head[2];
-    uint8_t control_TJ;         //0停止/无控制，1允许自瞄，2停止射击并返程
-	uint8_t shoot_TJ;           //1连发；2单发；0停止
+    uint8_t control_TJ;         //0停止/无控制，1允许自瞄，
+	uint8_t shoot_TJ;           //1单发；0停止
     float yaw_TJ;               // rad; bounded absolute yaw target
     float pitch_TJ;             // rad; bounded absolute pitch target in Phase 2D.5
     uint16_t crc16_TJ;

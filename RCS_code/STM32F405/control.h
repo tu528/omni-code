@@ -23,7 +23,7 @@ public:
 		PID chassis_reset{};
 		int32_t speedx{}, speedy{}, speedz{};
 		int32_t speed_x{}, speed_y{}, speed_z{};
-
+		float real_yaw_error;
 		// DEAD模式是否已经完成起点记录；false表示下一次Update需要重新初始化
 		bool  dead_started = false;
 		// DEAD当前运动段：0前、1右、2后、3左、4全部完成
@@ -32,7 +32,6 @@ public:
 		float dead_yaw_target = 0.0f;
 		// DEAD当前运动段开始时，四个底盘轮子的累计里程起点
 		float dead_d0, dead_d1, dead_d2, dead_d3;
-
 		// REAL模式是否已经完成起点记录；与DEAD完全独立
 		bool  real_started = false;
 		// REAL自主流程锁存：去程结束进入AUTOAIM后，防止遥控器拨杆覆盖当前阶段
@@ -92,7 +91,7 @@ public:
 
 	struct SHOOTER
 	{
-
+		bool return_started = false;
 		float now_bullet_speed = 0.f;
 		bool fire_last_single = false;
 		bool fire_now_single = false;

@@ -22,14 +22,16 @@ void RC::OnRC()
 		can2_motor[2].single_count = 0;
 		can2_motor[2].shoot_mode_now = Motor::stop;
 
-		ctrl.chassis.dead_started = false; 
-		ctrl.chassis.dead_part = 0;
+		/*ctrl.chassis.dead_started = false; 
+		ctrl.chassis.dead_part = 0;*/
 		ctrl.chassis.real_started = false;
 		ctrl.chassis.real_auto_active = false;
 		ctrl.chassis.real_returning = false;
 		ctrl.chassis.real_return_part = 0;
 		ctrl.chassis.real_completed = false;
 		ctrl.chassis.real_part = 0;
+		can2_motor[2].shoot_num = 0;//发射弹丸数
+		ctrl.shooter.return_started = false;
 	}
 
 }
@@ -105,7 +107,7 @@ void RC::RC_Control()
 		{
 			can2_motor[2].shoot_mode_now = Motor::stop;//强制关闭拨弹盘
 		}
-		if ( ctrl.mode != CONTROL::AUTOAIM)
+		if ( ctrl.mode != CONTROL::AUTOAIM && ctrl.mode != CONTROL::REAL)
 		{
 			xuc.Tx_TJ.mode_TJ = 0;
 				

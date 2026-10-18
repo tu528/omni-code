@@ -9,10 +9,12 @@
 
 #define MAX_SPEED 3000.0f
 #define PATH_FORWARD_SPEED 800.0f   // DEAD和REAL共用的平移目标速度，当前用于低速上车测试
+
 #define PATH_YAW_KP 20.0f             // DEAD和REAL共用的yaw误差比例增益
 #define PATH_YAW_MAX_SPEED 500.0f     // DEAD和REAL共用的最大speedz航向修正
 #define PATH_YAW_DEADBAND 0.5f       // DEAD和REAL共用的yaw误差死区，单位：度
-#define PATH_BRAKE_ACCEL_MMPS2 1000.0f // DEAD和REAL共用的初始减速度，单位：mm/s^2
+
+#define PATH_BRAKE_ACCEL_MMPS2 1000.0f // DEAD和REAL共用的初始 减速度（a），单位：mm/s^2
 #define PATH_MIN_SPEED_COMMAND 120.0f  // DEAD和REAL共用的最低速度指令
 
 float clamp_speed(float target)
@@ -105,54 +107,49 @@ void CONTROL::CHASSIS::Keep_Direction()//separate模式解算
 
 }
 
-// 根据四个M3508反馈的电机RPM，计算当前DEAD运动方向上的实际线速度。
-// 返回值单位为mm/s，并且只返回当前运动方向上的正速度。
-float CONTROL::CHASSIS::DeadMeasuredSpeed(uint8_t dead_part)
-{
-	const float rpm_to_mmps =
-		2.0f * 3.1415926f * WHEEL_RADIUS_MM /
-		(60.0f * GEAR_RATIO);
-
-	float v0 = can1_motor[0].curspeed * rpm_to_mmps;
-	float v1 = can1_motor[1].curspeed * rpm_to_mmps;
-	float v2 = can1_motor[2].curspeed * rpm_to_mmps;
-	float v3 = can1_motor[3].curspeed * rpm_to_mmps;
-
-	// 与DEAD模式dx、dy正运动学保持相同的符号约定
-	float vx = (v0 + v1 - v2 - v3) * 0.70710678f / 2.0f;
-	float vy = (v0 - v1 - v2 + v3) * 0.70710678f / 2.0f;
-
-	float traveled_speed = 0.0f;
-
-	switch (dead_part)
-	{
-	case 0: // 向前
-		traveled_speed = -vx;
-		break;
-
-	case 1: // 向右
-		traveled_speed = -vy;
-		break;
-
-	case 2: // 向后
-		traveled_speed = vx;
-		break;
-
-	case 3: // 向左
-		traveled_speed = vy;
-		break;
-
-	default:
-		traveled_speed = 0.0f;
-		break;
-	}
-
-	// 编码器噪声或方向反向时，不返回负速度
-	if (traveled_speed < 0.0f)
-		traveled_speed = 0.0f;
-
-	return traveled_speed;
-}
+//// 根据四个M3508反馈的电机RPM，计算当前DEAD运动方向上的实际线速度。
+//// 返回值单位为mm/s，并且只返回当前运动方向上的正速度。
+//float CONTROL::CHASSIS::DeadMeasuredSpeed(uint8_t dead_part)
+//{
+//	float v0 = can1_motor[0].curspeed * RPM_TO_MMPS;
+//	float v1 = can1_motor[1].curspeed * RPM_TO_MMPS;
+//	float v2 = can1_motor[2].curspeed * RPM_TO_MMPS;
+//	float v3 = can1_motor[3].curspeed * RPM_TO_MMPS;
+//
+//	// 与DEAD模式dx、dy正运动学保持相同的符号约定
+//	float vx = (v0 + v1 - v2 - v3) * 0.70710678f / 2.0f;
+//	float vy = (v0 - v1 - v2 + v3) * 0.70710678f / 2.0f;
+//
+//	float traveled_speed = 0.0f;
+//	switch (dead_part)
+//	{
+//	case 0: // 向前
+//		traveled_speed = -vx;
+//		break;
+//
+//	case 1: // 向右
+//		traveled_speed = -vy;
+//		break;
+//
+//	case 2: // 向后
+//		traveled_speed = vx;
+//		break;
+//
+//	case 3: // 向左
+//		traveled_speed = vy;
+//		break;
+//
+//	default:
+//		traveled_speed = 0.0f;
+//		break;
+//	}
+//
+//	// 编码器噪声或方向反向时，不返回负速度
+//	if (traveled_speed < 0.0f)
+//		traveled_speed = 0.0f;
+//
+//	return traveled_speed;
+//}
 
 // DEAD速度规划函数。
 // traveled_distance：当前运动段已经走过的距离，单位mm。
@@ -160,98 +157,88 @@ float CONTROL::CHASSIS::DeadMeasuredSpeed(uint8_t dead_part)
 // max_speed：允许的最大平移指令速度。
 // measured_speed_mmps：由四轮编码器换算出的实际线速度，单位mm/s。
 // 返回值：下一周期要给当前运动段的平移速度指令。
-float CONTROL::CHASSIS::DeadSpeedProfile(
-	float traveled_distance,
-	float target_distance,
-	float max_speed,
-	float measured_speed_mmps
-)
-{
-	if (target_distance <= 0.0f || max_speed <= 0.0f)
-		return 0.0f;
-
-	// 防止编码器噪声造成负距离
-	if (traveled_distance < 0.0f)
-		traveled_distance = 0.0f;
-
-	// 到达目标距离后不再继续给速度
-	if (traveled_distance >= target_distance)
-		return 0.0f;
-
-	float remaining_distance =
-		target_distance - traveled_distance;
-
-	// 根据当前实际速度计算刹车距离：d = v^2 / (2a)
-	float brake_distance = 0.0f;
-	if (measured_speed_mmps > 0.0f)
-	{
-		brake_distance =
-			measured_speed_mmps * measured_speed_mmps /
-			(2.0f * PATH_BRAKE_ACCEL_MMPS2);
-	}
-
-	// 进入动态刹车距离后，根据剩余距离降低目标速度
-	if (remaining_distance <= brake_distance &&
-		measured_speed_mmps > 0.0f)
-	{
-		float brake_speed_mmps = sqrtf(
-			2.0f * PATH_BRAKE_ACCEL_MMPS2 * remaining_distance
-		);
-
-		float brake_command =
-			brake_speed_mmps /
-			(0.70710678f * 2.0f * 3.1415926f * WHEEL_RADIUS_MM /
-			(60.0f * GEAR_RATIO));
-
-		if (brake_command < PATH_MIN_SPEED_COMMAND)
-			brake_command = PATH_MIN_SPEED_COMMAND;
-
-		if (brake_command > max_speed)
-			brake_command = max_speed;
-
-		return brake_command;
-	}
-
-	// 只保留前10%的平滑加速，后段由动态刹车控制
-	const float ramp_distance = target_distance * 0.10f;
-	const float min_speed_scale = 0.15f;
-
-	if (ramp_distance <= 0.0f)
-		return max_speed;
-
-	float speed_scale = 1.0f;
-
-	// 前 10%：平滑加速
-	if (traveled_distance < ramp_distance)
-	{
-		float progress = traveled_distance / ramp_distance;
-
-		speed_scale =
-			min_speed_scale +
-			(1.0f - min_speed_scale) *
-			(0.5f - 0.5f * cosf(3.1415926f * progress));
-	}
-	return max_speed * speed_scale;
-}
+//float CONTROL::CHASSIS::DeadSpeedProfile(float traveled_distance,float target_distance,float max_speed,float measured_speed_mmps
+//)
+//{
+//	if (target_distance <= 0.0f || max_speed <= 0.0f)
+//		return 0.0f;
+//
+//	// 防止编码器噪声造成负距离
+//	if (traveled_distance < 0.0f)
+//		traveled_distance = 0.0f;
+//
+//	// 到达目标距离后不再继续给速度
+//	if (traveled_distance >= target_distance)
+//		return 0.0f;
+//
+//	float remaining_distance =
+//		target_distance - traveled_distance;
+//
+//	// 根据当前实际速度计算刹车距离：d = v^2 / (2a)
+//	float brake_distance = 0.0f;
+//	if (measured_speed_mmps > 0.0f)
+//	{
+//		brake_distance =
+//			measured_speed_mmps * measured_speed_mmps /
+//			(2.0f * PATH_BRAKE_ACCEL_MMPS2);
+//	}
+//
+//	// 进入动态刹车距离后，根据剩余距离降低目标速度
+//	if (remaining_distance <= brake_distance &&
+//		measured_speed_mmps > 0.0f)
+//	{
+//		float brake_speed_mmps = sqrtf(
+//			2.0f * PATH_BRAKE_ACCEL_MMPS2 * remaining_distance
+//		);
+//
+//		float brake_command =
+//			brake_speed_mmps /
+//			(0.70710678f * 2.0f * 3.1415926f * WHEEL_RADIUS_MM /
+//			(60.0f * GEAR_RATIO));
+//
+//		if (brake_command < PATH_MIN_SPEED_COMMAND)
+//			brake_command = PATH_MIN_SPEED_COMMAND;
+//
+//		if (brake_command > max_speed)
+//			brake_command = max_speed;
+//
+//		return brake_command;
+//	}
+//
+//	// 只保留前10%的平滑加速，后段由动态刹车控制
+//	const float ramp_distance = target_distance * 0.10f;
+//	const float min_speed_scale = 0.15f;
+//
+//	if (ramp_distance <= 0.0f)
+//		return max_speed;
+//
+//	float speed_scale = 1.0f;
+//
+//	// 前 10%：平滑加速
+//	if (traveled_distance < ramp_distance)
+//	{
+//		float progress = traveled_distance / ramp_distance;
+//
+//		speed_scale =
+//			min_speed_scale +
+//			(1.0f - min_speed_scale) *
+//			(0.5f - 0.5f * cosf(3.1415926f * progress));
+//	}
+//	return max_speed * speed_scale;
+//}
 
 // REAL模式独立的实际速度计算函数，逻辑与DEAD对应函数一致，但状态入口完全独立。
 float CONTROL::CHASSIS::RealMeasuredSpeed(uint8_t real_part)
 {
-	const float rpm_to_mmps =
-		2.0f * 3.1415926f * WHEEL_RADIUS_MM /
-		(60.0f * GEAR_RATIO);
-
-	float v0 = can1_motor[0].curspeed * rpm_to_mmps;
-	float v1 = can1_motor[1].curspeed * rpm_to_mmps;
-	float v2 = can1_motor[2].curspeed * rpm_to_mmps;
-	float v3 = can1_motor[3].curspeed * rpm_to_mmps;
-
+	float v0 = can1_motor[0].curspeed * RPM_TO_MMPS;
+	float v1 = can1_motor[1].curspeed * RPM_TO_MMPS;
+	float v2 = can1_motor[2].curspeed * RPM_TO_MMPS;
+	float v3 = can1_motor[3].curspeed * RPM_TO_MMPS;
 	// 与REAL模式dx、dy正运动学保持相同的符号约定
 	float vx = (v0 + v1 - v2 - v3) * 0.70710678f / 2.0f;
 	float vy = (v0 - v1 - v2 + v3) * 0.70710678f / 2.0f;
 
 	float traveled_speed = 0.0f;
-
 	switch (real_part)
 	{
 	case 0: // 第1段：向前
@@ -261,24 +248,20 @@ float CONTROL::CHASSIS::RealMeasuredSpeed(uint8_t real_part)
 	case 8: // 第9段：向前
 		traveled_speed = -vx;
 		break;
-
 	case 1: // 第2段：向右
 	case 5: // 第6段：向右
 		traveled_speed = -vy;
 		break;
-
 	case 3: // 第4段：向左
 	case 7: // 第8段：向左
 	case 9: // 第10段：向左
 		traveled_speed = vy;
 		break;
-
 	case 10: // 返程第1段：向右875
 	case 12: // 返程第3段：向右550
 	case 16: // 返程第7段：向右650
 		traveled_speed = -vy;
 		break;
-
 	case 11: // 返程第2段：向后450
 	case 13: // 返程第4段：向后550
 	case 15: // 返程第6段：向后650
@@ -286,20 +269,16 @@ float CONTROL::CHASSIS::RealMeasuredSpeed(uint8_t real_part)
 	case 19: // 返程第10段：向后575
 		traveled_speed = vx;
 		break;
-
 	case 14: // 返程第5段：向左550
 	case 18: // 返程第9段：向左650
 		traveled_speed = vy;
 		break;
-
 	default:
 		traveled_speed = 0.0f;
 		break;
 	}
-
 	if (traveled_speed < 0.0f)
 		traveled_speed = 0.0f;
-
 	return traveled_speed;
 }
 
@@ -318,16 +297,13 @@ float CONTROL::CHASSIS::RealSpeedProfile(
 {
 	if (target_distance <= 0.0f || max_speed <= 0.0f)
 		return 0.0f;
-
 	if (traveled_distance < 0.0f)
 		traveled_distance = 0.0f;
-
 	if (traveled_distance >= target_distance)
 		return 0.0f;
-
 	float remaining_distance =
 		target_distance - traveled_distance;
-
+	//--------------------------------------------------------------------------------------------
 	// REAL模式根据当前实际速度计算刹车距离：d = v^2 / (2a)
 	float brake_distance = 0.0f;
 	if (measured_speed_mmps > 0.0f)
@@ -336,69 +312,51 @@ float CONTROL::CHASSIS::RealSpeedProfile(
 			measured_speed_mmps * measured_speed_mmps /
 			(2.0f * PATH_BRAKE_ACCEL_MMPS2);
 	}
-
 	// 进入动态刹车距离后，根据剩余距离降低目标速度
 	if (remaining_distance <= brake_distance &&
 		measured_speed_mmps > 0.0f)
 	{
-		float brake_speed_mmps = sqrtf(
-			2.0f * PATH_BRAKE_ACCEL_MMPS2 * remaining_distance
-		);
+		float brake_speed_mmps = sqrtf(2.0f * PATH_BRAKE_ACCEL_MMPS2 * remaining_distance);//v=sqrt(2as)
+		float brake_speed_rpm =
+			brake_speed_mmps / (0.70710678f * RPM_TO_MMPS);//m/s->rpm
+		if (brake_speed_rpm < PATH_MIN_SPEED_COMMAND)
+			brake_speed_rpm = PATH_MIN_SPEED_COMMAND;
+		if (brake_speed_rpm > max_speed)
+			brake_speed_rpm = max_speed;
 
-		float brake_command =
-			brake_speed_mmps /
-			(0.70710678f * 2.0f * 3.1415926f * WHEEL_RADIUS_MM /
-			(60.0f * GEAR_RATIO));
-
-		if (brake_command < PATH_MIN_SPEED_COMMAND)
-			brake_command = PATH_MIN_SPEED_COMMAND;
-
-		if (brake_command > max_speed)
-			brake_command = max_speed;
-
-		return brake_command;
-	}
-
+		return brake_speed_rpm;
+	}//------------------------------------------------------------------------------
 	// REAL模式只保留前10%的平滑加速，后段由动态刹车控制
-	const float ramp_distance = target_distance * 0.10f;
+	const float accelerate_distance = target_distance * 0.10f;
 	const float min_speed_scale = 0.15f;
-
-	if (ramp_distance <= 0.0f)
-		return max_speed;
-
-	if (traveled_distance < ramp_distance)
+	if (accelerate_distance <= 0.0f)
+		return 0.0f;
+	if (traveled_distance < accelerate_distance)
 	{
-		float progress = traveled_distance / ramp_distance;
-
+		float progress = traveled_distance / accelerate_distance;
 		float speed_scale =
-			min_speed_scale +
-			(1.0f - min_speed_scale) *
-			(0.5f - 0.5f *
-			cosf(3.1415926f * progress));
-
+			min_speed_scale +(1.0f - min_speed_scale) *(0.5f - 0.5f *cosf(3.1415926f * progress));
 		return max_speed * speed_scale;
 	}
-
 	return max_speed;
 }
 
 void CONTROL::CHASSIS::Update()
 {
-	// 上位机在AUTOAIM阶段发送control_TJ=2，表示停止射击并开始原路返程。
-	if (real_auto_active && ctrl.mode == CONTROL::AUTOAIM &&
-		xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_RETURN)
-	{
-		real_returning = true;
-		real_return_part = 0;
-		real_d0 = can1_motor[0].distance;
-		real_d1 = can1_motor[1].distance;
-		real_d2 = can1_motor[2].distance;
-		real_d3 = can1_motor[3].distance;
-		ctrl.mode = CONTROL::REAL;
-		ctrl.chassis.speed_x = 0;
-		ctrl.chassis.speed_y = 0;
-	}
-
+	//// 上位机在AUTOAIM阶段发送control_TJ=2，表示停止射击并开始原路返程。
+	//if (real_auto_active && ctrl.mode == CONTROL::AUTOAIM &&
+	//	xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_RETURN)
+	//{
+	//	real_returning = true;
+	//	real_return_part = 0;
+	//	real_d0 = can1_motor[0].distance;
+	//	real_d1 = can1_motor[1].distance;
+	//	real_d2 = can1_motor[2].distance;
+	//	real_d3 = can1_motor[3].distance;
+	//	ctrl.mode = CONTROL::REAL;
+	//	ctrl.chassis.speed_x = 0;
+	//	ctrl.chassis.speed_y = 0;
+	//}
 	if (ctrl.mode == RESET)
 	{
 		speedx = 0;
@@ -485,218 +443,214 @@ void CONTROL::CHASSIS::Update()
 		can1_motor[2].setspeed = (int32_t)Ramp(target2, can1_motor[2].setspeed, ramp_slope);
 		can1_motor[3].setspeed = (int32_t)Ramp(target3, can1_motor[3].setspeed, ramp_slope);
 	}
-	else if (ctrl.mode == CONTROL::DEAD)
-	{
-		// DEAD一次完整流程：前1m → 右1m → 后1m → 左1m
-		if (!dead_started)
-		{
-			dead_d0 = can1_motor[0].distance;
-			dead_d1 = can1_motor[1].distance;
-			dead_d2 = can1_motor[2].distance;
-			dead_d3 = can1_motor[3].distance;
-			dead_yaw_target = imu_pantile.GetAngleYaw();
+	//else if (ctrl.mode == CONTROL::DEAD)
+	//{
+	//	// DEAD一次完整流程：前1m → 右1m → 后1m → 左1m
+	//	if (!dead_started)
+	//	{
+	//		dead_d0 = can1_motor[0].distance;
+	//		dead_d1 = can1_motor[1].distance;
+	//		dead_d2 = can1_motor[2].distance;
+	//		dead_d3 = can1_motor[3].distance;
+	//		dead_yaw_target = imu_pantile.GetAngleYaw();
 
-			dead_part = 0;
-			dead_started = true;
-		}
+	//		dead_part = 0;
+	//		dead_started = true;
+	//	}
 
-		// dead_yaw_target是进入DEAD时的目标航向；当前yaw偏离后用speedz纠正底盘
-		float yaw_error = ctrl.GetDelta(
-			dead_yaw_target - imu_pantile.GetAngleYaw()
-		);
+	//	// dead_yaw_target是进入DEAD时的目标航向；当前yaw偏离后用speedz纠正底盘
+	//	float yaw_error = ctrl.GetDelta(
+	//		dead_yaw_target - imu_pantile.GetAngleYaw()
+	//	);
 
-		if (fabsf(yaw_error) < PATH_YAW_DEADBAND)
-			yaw_error = 0.0f;
+	//	if (fabsf(yaw_error) < PATH_YAW_DEADBAND)
+	//		yaw_error = 0.0f;
 
-		float yaw_correction = PATH_YAW_KP * yaw_error;
-		if (yaw_correction > PATH_YAW_MAX_SPEED)
-			yaw_correction = PATH_YAW_MAX_SPEED;
-		if (yaw_correction < -PATH_YAW_MAX_SPEED)
-			yaw_correction = -PATH_YAW_MAX_SPEED;
+	//	float yaw_correction = PATH_YAW_KP * yaw_error;
+	//	if (yaw_correction > PATH_YAW_MAX_SPEED)
+	//		yaw_correction = PATH_YAW_MAX_SPEED;
+	//	if (yaw_correction < -PATH_YAW_MAX_SPEED)
+	//		yaw_correction = -PATH_YAW_MAX_SPEED;
 
-		ctrl.chassis.speed_z = (int32_t)yaw_correction;
-		speedz = ctrl.chassis.speed_z;
+	//	ctrl.chassis.speed_z = (int32_t)yaw_correction;
+	//	speedz = ctrl.chassis.speed_z;
 
-		// d0~d3是本段四轮里程增量；dx、dy是本段底盘平移位移，单位mm
-		float d0 = can1_motor[0].distance - dead_d0;
-		float d1 = can1_motor[1].distance - dead_d1;
-		float d2 = can1_motor[2].distance - dead_d2;
-		float d3 = can1_motor[3].distance - dead_d3;
-		float dx = (d0 + d1 - d2 - d3) * 0.707f / 2.0f;
-		float dy = (d0 - d1 - d2 + d3) * 0.707f / 2.0f;
+	//	// d0~d3是本段四轮里程增量；dx、dy是本段底盘平移位移，单位mm
+	//	float d0 = can1_motor[0].distance - dead_d0;
+	//	float d1 = can1_motor[1].distance - dead_d1;
+	//	float d2 = can1_motor[2].distance - dead_d2;
+	//	float d3 = can1_motor[3].distance - dead_d3;
+	//	float dx = (d0 + d1 - d2 - d3) * 0.707f / 2.0f;
+	//	float dy = (d0 - d1 - d2 + d3) * 0.707f / 2.0f;
 
-		// traveled_distance表示当前dead_part这一段已经走过的有效距离
-		float traveled_distance = 0.0f;
+	//	// traveled_distance表示当前dead_part这一段已经走过的有效距离
+	//	float traveled_distance = 0.0f;
 
-		switch (dead_part)
-		{
-		case 0: // 向前
-			traveled_distance = -dx;
-			break;
+	//	switch (dead_part)
+	//	{
+	//	case 0: // 向前
+	//		traveled_distance = -dx;
+	//		break;
 
-		case 1: // 向右
-			traveled_distance = -dy;
-			break;
+	//	case 1: // 向右
+	//		traveled_distance = -dy;
+	//		break;
 
-		case 2: // 向后
-			traveled_distance = dx;
-			break;
+	//	case 2: // 向后
+	//		traveled_distance = dx;
+	//		break;
 
-		case 3: // 向左
-			traveled_distance = dy;
-			break;
+	//	case 3: // 向左
+	//		traveled_distance = dy;
+	//		break;
 
-		default:
-			traveled_distance = 1000.0f; // 当前DEAD段目标距离，单位：mm
-			break;
-		}
+	//	default:
+	//		traveled_distance = 1000.0f; // 当前DEAD段目标距离，单位：mm
+	//		break;
+	//	}
 
-		// part_done为true时，当前段结束并切换到下一段
-		bool part_done = false;
+	//	// part_done为true时，当前段结束并切换到下一段
+	//	bool part_done = false;
 
-		switch (dead_part)
-		{
-		case 0: // 向前
-			if (dx <= -1000.0f) // 当前DEAD段目标距离，单位：mm
-				part_done = true;
-			break;
+	//	switch (dead_part)
+	//	{
+	//	case 0: // 向前
+	//		if (dx <= -1000.0f) // 当前DEAD段目标距离，单位：mm
+	//			part_done = true;
+	//		break;
 
-		case 1: // 向右
-			if (dy <= -1000.0f) // 当前DEAD段目标距离，单位：mm
-				part_done = true;
-			break;
+	//	case 1: // 向右
+	//		if (dy <= -1000.0f) // 当前DEAD段目标距离，单位：mm
+	//			part_done = true;
+	//		break;
 
-		case 2: // 向后
-			if (dx >= 1000.0f) // 当前DEAD段目标距离，单位：mm
-				part_done = true;
-			break;
+	//	case 2: // 向后
+	//		if (dx >= 1000.0f) // 当前DEAD段目标距离，单位：mm
+	//			part_done = true;
+	//		break;
 
-		case 3: // 向左
-			if (dy >= 1000.0f) // 当前DEAD段目标距离，单位：mm
-				part_done = true;
-			break;
+	//	case 3: // 向左
+	//		if (dy >= 1000.0f) // 当前DEAD段目标距离，单位：mm
+	//			part_done = true;
+	//		break;
 
-		default:
-			break;
-		}
+	//	default:
+	//		break;
+	//	}
 
-		if (part_done)
-		{
-			if (dead_part < 3)
-			{
-				dead_part++;
+	//	if (part_done)
+	//	{
+	//		if (dead_part < 3)
+	//		{
+	//			dead_part++;
 
-				dead_d0 = can1_motor[0].distance;
-				dead_d1 = can1_motor[1].distance;
-				dead_d2 = can1_motor[2].distance;
-				dead_d3 = can1_motor[3].distance;
+	//			dead_d0 = can1_motor[0].distance;
+	//			dead_d1 = can1_motor[1].distance;
+	//			dead_d2 = can1_motor[2].distance;
+	//			dead_d3 = can1_motor[3].distance;
 
-				// 阶段切换时先给一个零速度目标
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = 0;
-			}
-			else
-			{
-				// 第四段完成，永久停止
-				dead_part = 4;
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = 0;
-			}
-		}
-		else
-		{
-			float measured_speed_mmps =
-				DeadMeasuredSpeed(dead_part);
+	//			// 阶段切换时先给一个零速度目标
+	//			ctrl.chassis.speed_x = 0;
+	//			ctrl.chassis.speed_y = 0;
+	//		}
+	//		else
+	//		{
+	//			// 第四段完成，永久停止
+	//			dead_part = 4;
+	//			ctrl.chassis.speed_x = 0;
+	//			ctrl.chassis.speed_y = 0;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		float measured_speed_mmps =
+	//			DeadMeasuredSpeed(dead_part);
 
-			float dead_speed = DeadSpeedProfile(
-				traveled_distance,
-				1000.0f, // 当前DEAD段目标距离，单位：mm
-				PATH_FORWARD_SPEED,
-				measured_speed_mmps
-			);
+	//		float dead_speed = DeadSpeedProfile(
+	//			traveled_distance,
+	//			1000.0f, // 当前DEAD段目标距离，单位：mm
+	//			PATH_FORWARD_SPEED,
+	//			measured_speed_mmps
+	//		);
 
-			switch (dead_part)
-			{
-			case 0: // 向前
-				ctrl.chassis.speed_x = dead_speed;
-				ctrl.chassis.speed_y = 0;
-				break;
+	//		switch (dead_part)
+	//		{
+	//		case 0: // 向前
+	//			ctrl.chassis.speed_x = dead_speed;
+	//			ctrl.chassis.speed_y = 0;
+	//			break;
 
-			case 1: // 向右
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = dead_speed;
-				break;
+	//		case 1: // 向右
+	//			ctrl.chassis.speed_x = 0;
+	//			ctrl.chassis.speed_y = dead_speed;
+	//			break;
 
-			case 2: // 向后
-				ctrl.chassis.speed_x = -dead_speed;
-				ctrl.chassis.speed_y = 0;
-				break;
+	//		case 2: // 向后
+	//			ctrl.chassis.speed_x = -dead_speed;
+	//			ctrl.chassis.speed_y = 0;
+	//			break;
 
-			case 3: // 向左
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = -dead_speed;
-				break;
+	//		case 3: // 向左
+	//			ctrl.chassis.speed_x = 0;
+	//			ctrl.chassis.speed_y = -dead_speed;
+	//			break;
 
-			case 4: // 全部完成
-			default:
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = 0;
-				break;
-			}
-		}
+	//		case 4: // 全部完成
+	//		default:
+	//			ctrl.chassis.speed_x = 0;
+	//			ctrl.chassis.speed_y = 0;
+	//			break;
+	//		}
+	//	}
 
-		// 保留Keep_Direction()，根据云台yaw电机编码器修正底盘平移坐标
-		Keep_Direction();
+	//	// 保留Keep_Direction()，根据云台yaw电机编码器修正底盘平移坐标
+	//	Keep_Direction();
 
-		uint32_t ramp_slope = (fabsf(speedz) > (fabsf(speedx) + fabsf(speedy))) ? 190 * 5 : 150 *
-			5;
-		float target2 = -clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
-		float target3 = -clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
-		float target0 = -clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
-		float target1 = -clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
+	//	uint32_t ramp_slope = (fabsf(speedz) > (fabsf(speedx) + fabsf(speedy))) ? 190 * 5 : 150 *
+	//		5;
+	//	float target2 = -clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
+	//	float target3 = -clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
+	//	float target0 = -clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
+	//	float target1 = -clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
 
-		can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
-		can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
-		can1_motor[2].setspeed = (int32_t)Ramp(target2, can1_motor[2].setspeed, ramp_slope);
-		can1_motor[3].setspeed = (int32_t)Ramp(target3, can1_motor[3].setspeed, ramp_slope);
-	
-	}
+	//	can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
+	//	can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
+	//	can1_motor[2].setspeed = (int32_t)Ramp(target2, can1_motor[2].setspeed, ramp_slope);
+	//	can1_motor[3].setspeed = (int32_t)Ramp(target3, can1_motor[3].setspeed, ramp_slope);
+	//
+	//}
 	else if (ctrl.mode == CONTROL::REAL)
 	{
 		// REAL一次完整流程：
 		// 前575 → 右650 → 前1550 → 左650 → 前650
 		// → 右550 → 前550 → 左550 → 前450 → 左875
-		if (!real_started)
+		if (!real_started)//初始化
 		{
 			real_d0 = can1_motor[0].distance;
 			real_d1 = can1_motor[1].distance;
 			real_d2 = can1_motor[2].distance;
 			real_d3 = can1_motor[3].distance;
 			real_yaw_target = imu_pantile.GetAngleYaw();
-
 			real_part = 0;
 			real_returning = false;
 			real_return_part = 0;
 			real_auto_active = true;
 			real_started = true;
 		}
-
 		// real_yaw_target是进入REAL时的目标航向；当前yaw偏离后用speedz纠正底盘
-		float real_yaw_error = ctrl.GetDelta(
-			real_yaw_target - imu_pantile.GetAngleYaw()
-		);
-
+		if (xuc.Tx_TJ.mode_TJ == 0)
+		{
+			real_yaw_error = ctrl.GetDelta(
+				real_yaw_target - imu_pantile.GetAngleYaw());
+		}
 		if (fabsf(real_yaw_error) < PATH_YAW_DEADBAND)
 			real_yaw_error = 0.0f;
-
 		float real_yaw_correction = PATH_YAW_KP * real_yaw_error;
 		if (real_yaw_correction > PATH_YAW_MAX_SPEED)
 			real_yaw_correction = PATH_YAW_MAX_SPEED;
 		if (real_yaw_correction < -PATH_YAW_MAX_SPEED)
 			real_yaw_correction = -PATH_YAW_MAX_SPEED;
-
-		ctrl.chassis.speed_z = (int32_t)real_yaw_correction;
-		speedz = ctrl.chassis.speed_z;
+		speedz = (int32_t)real_yaw_correction;
 
 		// real_delta_d0~d3是本段四轮里程增量；real_dx、real_dy是本段位移
 		float real_delta_d0 = can1_motor[0].distance - real_d0;
@@ -714,119 +668,96 @@ void CONTROL::CHASSIS::Update()
 		uint8_t real_motion_part = real_returning
 			? (uint8_t)(10 + real_return_part)
 			: real_part;
-
 		switch (real_motion_part)
 		{
 		case 0: // 第1段：向前575 mm
-			real_traveled_distance = -real_dx;
+			real_traveled_distance = real_dx;
 			real_target_distance = 575.0f;
 			break;
-
 		case 1: // 第2段：向右650 mm
-			real_traveled_distance = -real_dy;
+			real_traveled_distance = real_dy;
 			real_target_distance = 650.0f;
 			break;
-
 		case 2: // 第3段：向前1550 mm
-			real_traveled_distance = -real_dx;
+			real_traveled_distance = real_dx;
 			real_target_distance = 1550.0f;
 			break;
-
 		case 3: // 第4段：向左650 mm
-			real_traveled_distance = real_dy;
+			real_traveled_distance = -real_dy;
 			real_target_distance = 650.0f;
 			break;
-
 		case 4: // 第5段：向前650 mm
-			real_traveled_distance = -real_dx;
+			real_traveled_distance = real_dx;
 			real_target_distance = 650.0f;
 			break;
-
 		case 5: // 第6段：向右550 mm
-			real_traveled_distance = -real_dy;
+			real_traveled_distance = real_dy;
 			real_target_distance = 550.0f;
 			break;
-
 		case 6: // 第7段：向前550 mm
-			real_traveled_distance = -real_dx;
+			real_traveled_distance = real_dx;
 			real_target_distance = 550.0f;
 			break;
-
 		case 7: // 第8段：向左550 mm
-			real_traveled_distance = real_dy;
+			real_traveled_distance = -real_dy;
 			real_target_distance = 550.0f;
 			break;
-
 		case 8: // 第9段：向前450 mm
+			real_traveled_distance = real_dx;
+			real_target_distance = 450.0f;
+			break;
+		case 9: // 第10段：向左875 mm
+			real_traveled_distance = -real_dy;
+			real_target_distance = 875.0f;
+			break;
+		case 10: // 返程第1段：向右875 mm
+			real_traveled_distance = real_dy;
+			real_target_distance = 875.0f;
+			break;
+		case 11: // 返程第2段：向后450 mm
 			real_traveled_distance = -real_dx;
 			real_target_distance = 450.0f;
 			break;
-
-		case 9: // 第10段：向左875 mm
-			real_traveled_distance = real_dy;
-			real_target_distance = 875.0f;
-			break;
-
-		case 10: // 返程第1段：向右875 mm
-			real_traveled_distance = -real_dy;
-			real_target_distance = 875.0f;
-			break;
-
-		case 11: // 返程第2段：向后450 mm
-			real_traveled_distance = real_dx;
-			real_target_distance = 450.0f;
-			break;
-
 		case 12: // 返程第3段：向右550 mm
-			real_traveled_distance = -real_dy;
-			real_target_distance = 550.0f;
-			break;
-
-		case 13: // 返程第4段：向后550 mm
-			real_traveled_distance = real_dx;
-			real_target_distance = 550.0f;
-			break;
-
-		case 14: // 返程第5段：向左550 mm
 			real_traveled_distance = real_dy;
 			real_target_distance = 550.0f;
 			break;
-
-		case 15: // 返程第6段：向后650 mm
-			real_traveled_distance = real_dx;
-			real_target_distance = 650.0f;
+		case 13: // 返程第4段：向后550 mm
+			real_traveled_distance = -real_dx;
+			real_target_distance = 550.0f;
 			break;
-
-		case 16: // 返程第7段：向右650 mm
+		case 14: // 返程第5段：向左550 mm
 			real_traveled_distance = -real_dy;
+			real_target_distance = 550.0f;
+			break;
+		case 15: // 返程第6段：向后650 mm
+			real_traveled_distance = -real_dx;
 			real_target_distance = 650.0f;
 			break;
-
+		case 16: // 返程第7段：向右650 mm
+			real_traveled_distance = real_dy;
+			real_target_distance = 650.0f;
+			break;
 		case 17: // 返程第8段：向后1550 mm
-			real_traveled_distance = real_dx;
+			real_traveled_distance = -real_dx;
 			real_target_distance = 1550.0f;
 			break;
-
 		case 18: // 返程第9段：向左650 mm
-			real_traveled_distance = real_dy;
+			real_traveled_distance = -real_dy;
 			real_target_distance = 650.0f;
 			break;
-
 		case 19: // 返程第10段：向后575 mm
-			real_traveled_distance = real_dx;
+			real_traveled_distance = -real_dx;
 			real_target_distance = 575.0f;
 			break;
-
 		default:
 			real_traveled_distance = 0.0f;
 			real_target_distance = 0.0f;
 			break;
 		}
-
 		// 所有REAL段都统一按“本段有效里程 >= 本段目标距离”判断完成
 		bool real_part_done =
-			(real_motion_part >= 20) ||
-			(real_traveled_distance >= real_target_distance);
+			(real_motion_part >= 20) ||(real_traveled_distance >= real_target_distance);
 
 		if (real_part_done)
 		{
@@ -840,40 +771,42 @@ void CONTROL::CHASSIS::Update()
 				real_d3 = can1_motor[3].distance;
 
 				// REAL阶段切换时先给一个零速度目标
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = 0;
+				speedx = 0;
+				speedy = 0;
 			}
 			else if (!real_returning)
 			{
 				// REAL去程第十段完成，进入AUTOAIM等待射击。
-				real_part = 10;
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = 0;
-				ctrl.mode = CONTROL::AUTOAIM;
+				ctrl.chassis.real_d0 = can1_motor[0].distance;
+				ctrl.chassis.real_d1 = can1_motor[1].distance;
+				ctrl.chassis.real_d2 = can1_motor[2].distance;
+				ctrl.chassis.real_d3 = can1_motor[3].distance;
+				ctrl.chassis.real_part = 20;
+				speedx = 0;
+				speedy = 0;
+				xuc.Tx_TJ.mode_TJ = 1;
 			}
 			else if (real_return_part < 9)
 			{
 				real_return_part++;
-
 				real_d0 = can1_motor[0].distance;
 				real_d1 = can1_motor[1].distance;
 				real_d2 = can1_motor[2].distance;
 				real_d3 = can1_motor[3].distance;
-
 				// REAL返程阶段切换时先给一个零速度目标
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = 0;
+				speedx = 0;
+				speedy = 0;
 			}
 			else
 			{
 				// REAL返程第十段完成，回到启动区并停止。
-				real_return_part = 10;
-				real_returning = false;
-				real_auto_active = false;
-				real_completed = true;
-				ctrl.mode = CONTROL::STOP;
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = 0;
+				ctrl.chassis.real_return_part = 10;
+				ctrl.chassis.real_returning = false;
+				ctrl.chassis.real_auto_active = false;
+				ctrl.chassis.real_completed = true;
+				ctrl.mode = CONTROL::RESET;
+				speedx = 0;
+				speedy = 0;
 			}
 		}
 		else
@@ -881,7 +814,8 @@ void CONTROL::CHASSIS::Update()
 			float real_measured_speed_mmps =
 				RealMeasuredSpeed(real_motion_part);
 
-			float real_speed = RealSpeedProfile(
+			float real_speed = RealSpeedProfile
+			(
 				real_traveled_distance,
 				real_target_distance,
 				PATH_FORWARD_SPEED,
@@ -895,85 +829,61 @@ void CONTROL::CHASSIS::Update()
 			case 4: // 第5段：向前
 			case 6: // 第7段：向前
 			case 8: // 第9段：向前
-				ctrl.chassis.speed_x = real_speed;
-				ctrl.chassis.speed_y = 0;
+				speedx = real_speed;
+				speedy = 0;
 				break;
-
 			case 1: // 第2段：向右
 			case 5: // 第6段：向右
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = real_speed;
+				speedx = 0;
+				speedy = real_speed;
 				break;
-
 			case 3: // 第4段：向左
 			case 7: // 第8段：向左
 			case 9: // 第10段：向左
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = -real_speed;
+				speedx = 0;
+				speedy = -real_speed;
 				break;
-
 			case 10: // 返程第1段：向右875
 			case 12: // 返程第3段：向右550
 			case 16: // 返程第7段：向右650
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = real_speed;
+				speedx = 0;
+				speedy = real_speed;
 				break;
-
 			case 11: // 返程第2段：向后450
 			case 13: // 返程第4段：向后550
 			case 15: // 返程第6段：向后650
 			case 17: // 返程第8段：向后1550
 			case 19: // 返程第10段：向后575
-				ctrl.chassis.speed_x = -real_speed;
-				ctrl.chassis.speed_y = 0;
+				speedx = -real_speed;
+				speedy = 0;
 				break;
-
 			case 14: // 返程第5段：向左550
 			case 18: // 返程第9段：向左650
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = -real_speed;
+				speedx = 0;
+				speedy = -real_speed;
 				break;
-
 			case 20: // 全部完成
 			default:
-				ctrl.chassis.speed_x = 0;
-				ctrl.chassis.speed_y = 0;
+				speedx = 0;
+				speedy = 0;
 				break;
 			}
 		}
+		uint32_t ramp_slope;//加速限制，防止加速过快，电流太大烧坏电机
+		{
+			ramp_slope = (fabsf(speedz) > (fabsf(speedx) + fabsf(speedy)))
+				? 190 * 5
+				: 150 * 5;
+		}
+		float target2 = -clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
+		float target3 = -clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
+		float target0 = -clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
+		float target1 = -clamp_speed(speedx * 0.707f - speedy * 0.707f + speedz);
 
-		// REAL模式保留Keep_Direction()，修正底盘平移坐标
-		Keep_Direction();
-
-		uint32_t real_ramp_slope =
-			(fabsf(speedz) > (fabsf(speedx) + fabsf(speedy)))
-			? 190 * 5
-			: 150 * 5;
-		float real_target2 = -clamp_speed(
-			-speedx * 0.707f - speedy * 0.707f + speedz
-		);
-		float real_target3 = -clamp_speed(
-			-speedx * 0.707f + speedy * 0.707f + speedz
-		);
-		float real_target0 = -clamp_speed(
-			speedx * 0.707f + speedy * 0.707f + speedz
-		);
-		float real_target1 = -clamp_speed(
-			speedx * 0.707f - speedy * 0.707f + speedz
-		);
-
-		can1_motor[0].setspeed = (int32_t)Ramp(
-			real_target0, can1_motor[0].setspeed, real_ramp_slope
-		);
-		can1_motor[1].setspeed = (int32_t)Ramp(
-			real_target1, can1_motor[1].setspeed, real_ramp_slope
-		);
-		can1_motor[2].setspeed = (int32_t)Ramp(
-			real_target2, can1_motor[2].setspeed, real_ramp_slope
-		);
-		can1_motor[3].setspeed = (int32_t)Ramp(
-			real_target3, can1_motor[3].setspeed, real_ramp_slope
-		);
+		can1_motor[0].setspeed = (int32_t)Ramp(target0, can1_motor[0].setspeed, ramp_slope);
+		can1_motor[1].setspeed = (int32_t)Ramp(target1, can1_motor[1].setspeed, ramp_slope);
+		can1_motor[2].setspeed = (int32_t)Ramp(target2, can1_motor[2].setspeed, ramp_slope);
+		can1_motor[3].setspeed = (int32_t)Ramp(target3, can1_motor[3].setspeed, ramp_slope);
 	}
 }
 
@@ -1028,6 +938,22 @@ void CONTROL::PANTILE::Update()
 		can1_motor[4].setangle = mark_yaw;
 		DMmotor[0].setPos = mark_pitch;
 	}
+	else if (ctrl.mode == CONTROL::REAL)
+	{
+		if (xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM)
+		{// 上位机给的是 rad，当前 Keep_Pantile 按 deg 计算
+			const float target_yaw_deg = xuc.GetTargetYaw() * 57.2957795f;
+			const float target_pitch_deg = xuc.GetTargetPitch() * 57.2957795f;
+			Keep_Pantile(target_yaw_deg, PANTILE::YAW, imu_pantile);
+			Keep_Pantile(target_pitch_deg, PANTILE::PITCH, imu_pantile);
+		}
+		if (ctrl.pantile.mark_pitch >= 0.35f)  ctrl.pantile.mark_pitch = 0.35f;
+		if (ctrl.pantile.mark_pitch <= -0.324f) ctrl.pantile.mark_pitch = -0.324f;
+		if (mark_yaw >= 8192.0f) mark_yaw -= 8192.0f;
+		if (mark_yaw < 0.0f)    mark_yaw += 8192.0f;
+		can1_motor[4].setangle = mark_yaw;
+		DMmotor[0].setPos = mark_pitch;
+	}
 }
 
 void CONTROL::SHOOTER::Update()
@@ -1037,14 +963,8 @@ void CONTROL::SHOOTER::Update()
 	{
 		can2_motor[0].setspeed = -6000;
 		can2_motor[1].setspeed = 6000;
-		fire_now_single = (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() &&
-			xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM);
-		//if (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() && xuc.Rx_TJ.control_TJ == 1)
-		//{
-		//	can2_motor[2].shoot_mode_now = Motor::running;//目前只有连发，注释里有单发逻辑
-		//}
-		
-		/*else */if(fire_now_single&&!(fire_last_single)&& can2_motor[2].shoot_mode_now == Motor::stop)
+		fire_now_single = (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() &&xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM);
+		if(fire_now_single&&!(fire_last_single)&& can2_motor[2].shoot_mode_now == Motor::stop)
 		{
 			can2_motor[2].shoot_mode_now = Motor::single;
 			can2_motor[2].need_curcircle = 4;
@@ -1056,6 +976,41 @@ void CONTROL::SHOOTER::Update()
 		can2_motor[0].setspeed = -6000;
 		can2_motor[1].setspeed = 6000;
 
+	}
+	else if (ctrl.mode == CONTROL::REAL)
+	{
+		if (xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM && xuc.Tx_TJ.mode_TJ == 1)
+		{
+			can2_motor[0].setspeed = -6000;
+			can2_motor[1].setspeed = 6000;
+		}
+		else
+		{
+			can2_motor[0].setspeed = 0;
+			can2_motor[1].setspeed = 0;
+		}
+		fire_now_single = (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM);
+		if (fire_now_single && !(fire_last_single) && can2_motor[2].shoot_mode_now == Motor::stop)
+		{
+			can2_motor[2].shoot_mode_now = Motor::single;
+			can2_motor[2].need_curcircle = 4;
+			can2_motor[2].shoot_num += 1;
+		}
+		fire_last_single = fire_now_single;
+		if(can2_motor[2].shoot_num >=50)
+		{
+			xuc.Tx_TJ.mode_TJ = 0;
+			if (!return_started)
+			{
+				ctrl.chassis.real_d0 = can1_motor[0].distance;
+				ctrl.chassis.real_d1 = can1_motor[1].distance;
+				ctrl.chassis.real_d2 = can1_motor[2].distance;
+				ctrl.chassis.real_d3 = can1_motor[3].distance;
+				ctrl.chassis.real_yaw_target = imu_pantile.GetAngleYaw();
+				ctrl.chassis.real_returning = true;
+				return_started = true;
+			}
+		}
 	}
 	 else
 	 {

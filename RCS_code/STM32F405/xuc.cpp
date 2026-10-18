@@ -83,10 +83,6 @@ void XUC::Decode()
         target.pitch = Rx_TJ.pitch_TJ;
         fire_auto = Rx_TJ.shoot_TJ;
 
-        if (Rx_TJ.control_TJ == 0) {
-            target.yaw = 0.0f;
-            target.pitch = 0.0f;
-        }
 
         m_lastRxTick = xTaskGetTickCount();
         return;

@@ -210,7 +210,7 @@ uint8_t initial_cnt=0;
 void Motor::GetDistanceFromMechanicalAngle() {
 	if (initial_cnt<5)
 	initial_cnt++;
-	distance=(6.2831853f/ 8192.0f)*sum_angle * (WHEEL_RADIUS_MM / GEAR_RATIO)-initial_x; 
+	distance=-(6.2831853f/ 8192.0f)*sum_angle * (WHEEL_RADIUS_MM / GEAR_RATIO)-initial_x; 
 
 	if(initial_cnt<3)
 	initial_x = distance;

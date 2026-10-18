@@ -7,7 +7,7 @@
 #include "label.h"
 #define WHEEL_RADIUS_MM 76.0f
 #define GEAR_RATIO      19.0f
-
+#define RPM_TO_MMPS 2.0f * 3.1415926f * WHEEL_RADIUS_MM /(60.0f * GEAR_RATIO)
 constexpr auto MAXSPEED = 5000;
 //constexpr auto ADJUSTSPEED = 3000;
 
@@ -53,6 +53,7 @@ public:
 	};
 	single_state_e single_state = SINGLE_RESET;
 	int8_t single_count;//
+	int8_t shoot_num ;//单发数量
 	volatile uint8_t shoot_mode_now = stop;
 	enum shoot_mode { stop=0, running , single };//running:连续拨弹 stop:停止 single:单次拨弹
 	static int16_t getdeltaa(int16_t diff);
