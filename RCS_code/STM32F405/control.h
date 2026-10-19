@@ -81,6 +81,13 @@ public:
 		enum TYPE { YAW, PITCH };
 		float mark_pitch{}, mark_yaw{};
 		float keep_angle1{}, keep_angle2{};
+		// REAL到达发射区后，记录当前云台角度并在相对范围内搜索目标
+		bool real_search_initialized = false;
+		bool real_tracking_active = false;
+		float real_search_center_yaw = 0.0f;
+		float real_search_offset = 0.0f;
+		int8_t real_search_direction = -1;
+		uint16_t real_search_dwell = 0;
 
 		PID pantile_PID[3] = { {0.1f,0.0f,0.01f},{0.05f,0.f,0.f}, {0.f,0.f,0.f} };
 		const float sensitivity = 2.5f;

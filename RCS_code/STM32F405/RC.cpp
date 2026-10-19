@@ -32,6 +32,7 @@ void RC::OnRC()
 		ctrl.chassis.real_part = 0;
 		can2_motor[2].shoot_num = 0;//发射弹丸数
 		ctrl.shooter.return_started = false;
+		xuc.Tx_TJ.mode_TJ = 0;
 	}
 
 }
@@ -49,11 +50,6 @@ void RC::Update()
 
 void RC::RC_CheckState()
 {
-	// REAL automatic mode keeps the RC switch from overwriting AUTOAIM.
-	if (ctrl.chassis.real_auto_active || ctrl.chassis.real_completed)
-	{
-		return;
-	}
 	switch (RC_STATE(rc.s[0], rc.s[1]))
 	{
 	case RC_STATE(UP, UP):
@@ -103,7 +99,7 @@ void RC::RC_Control()
 
 	if (ctrl.mode != CONTROL::RESET)
 	{
-		if (ctrl.mode != CONTROL::FIRE&& ctrl.mode != CONTROL::AUTOAIM)
+		if (ctrl.mode != CONTROL::FIRE&& ctrl.mode != CONTROL::AUTOAIM&& ctrl.mode != CONTROL::REAL)
 		{
 			can2_motor[2].shoot_mode_now = Motor::stop;//强制关闭拨弹盘
 		}

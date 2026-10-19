@@ -17,6 +17,12 @@
 #define PATH_BRAKE_ACCEL_MMPS2 1000.0f // DEAD和REAL共用的初始 减速度（a），单位：mm/s^2
 #define PATH_MIN_SPEED_COMMAND 120.0f  // DEAD和REAL共用的最低速度指令
 
+#define REAL_START_SPEED_SCALE 0.40f  // REAL首次出发和射击后返程起步，从目标速度的40%开始
+
+#define REAL_SEARCH_YAW_RANGE 600.0f   // REAL无目标时，以到位角为中心的搜索半径
+#define REAL_SEARCH_YAW_STEP 2.0f      // 每个ControlTask周期的搜索步长，约17.6度/秒
+#define REAL_SEARCH_DWELL_CYCLES 40    // 搜索端点停留约200ms（ControlTask周期约5ms）
+
 float clamp_speed(float target)
 {
 	if (target > MAX_SPEED) return MAX_SPEED;
@@ -328,7 +334,10 @@ float CONTROL::CHASSIS::RealSpeedProfile(
 	}//------------------------------------------------------------------------------
 	// REAL模式只保留前10%的平滑加速，后段由动态刹车控制
 	const float accelerate_distance = target_distance * 0.10f;
-	const float min_speed_scale = 0.15f;
+	// 只提高去程第一段和返程第一段的起步速度，中间换段仍按原比例加速。
+	const bool real_start_segment = (!real_returning && real_part == 0) ||
+		(real_returning && real_return_part == 0);
+	const float min_speed_scale = real_start_segment ? REAL_START_SPEED_SCALE : 0.15f;
 	if (accelerate_distance <= 0.0f)
 		return 0.0f;
 	if (traveled_distance < accelerate_distance)
@@ -343,20 +352,23 @@ float CONTROL::CHASSIS::RealSpeedProfile(
 
 void CONTROL::CHASSIS::Update()
 {
-	//// 上位机在AUTOAIM阶段发送control_TJ=2，表示停止射击并开始原路返程。
-	//if (real_auto_active && ctrl.mode == CONTROL::AUTOAIM &&
-	//	xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_RETURN)
-	//{
-	//	real_returning = true;
-	//	real_return_part = 0;
-	//	real_d0 = can1_motor[0].distance;
-	//	real_d1 = can1_motor[1].distance;
-	//	real_d2 = can1_motor[2].distance;
-	//	real_d3 = can1_motor[3].distance;
-	//	ctrl.mode = CONTROL::REAL;
-	//	ctrl.chassis.speed_x = 0;
-	//	ctrl.chassis.speed_y = 0;
-	//}
+	// 上位机在REAL发射区发送control_TJ=2，表示停止射击并开始原路返程。
+	if (real_auto_active && real_part >= 20 && !real_returning &&
+		xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_RETURN)
+	{
+		real_returning = true;
+		real_return_part = 0;
+		real_d0 = can1_motor[0].distance;
+		real_d1 = can1_motor[1].distance;
+		real_d2 = can1_motor[2].distance;
+		real_d3 = can1_motor[3].distance;
+		real_yaw_target = imu_pantile.GetAngleYaw();
+		xuc.Tx_TJ.mode_TJ = 0;
+		ctrl.shooter.return_started = true;
+		speedx = 0;
+		speedy = 0;
+		speedz = 0;
+	}
 	if (ctrl.mode == RESET)
 	{
 		speedx = 0;
@@ -638,10 +650,15 @@ void CONTROL::CHASSIS::Update()
 			real_started = true;
 		}
 		// real_yaw_target是进入REAL时的目标航向；当前yaw偏离后用speedz纠正底盘
-		if (xuc.Tx_TJ.mode_TJ == 0)
+		if (real_returning || real_part < 20)
 		{
 			real_yaw_error = ctrl.GetDelta(
 				real_yaw_target - imu_pantile.GetAngleYaw());
+		}
+		else
+		{
+			// 发射区底盘保持停止，云台扫描和自瞄时不再沿用行驶航向修正。
+			real_yaw_error = 0.0f;
 		}
 		if (fabsf(real_yaw_error) < PATH_YAW_DEADBAND)
 			real_yaw_error = 0.0f;
@@ -784,6 +801,8 @@ void CONTROL::CHASSIS::Update()
 				ctrl.chassis.real_part = 20;
 				speedx = 0;
 				speedy = 0;
+				speedz = 0;
+				real_yaw_error = 0.0f;
 				xuc.Tx_TJ.mode_TJ = 1;
 			}
 			else if (real_return_part < 9)
@@ -889,6 +908,11 @@ void CONTROL::CHASSIS::Update()
 
 void CONTROL::PANTILE::Update()
 {
+	if (ctrl.mode != CONTROL::REAL)
+	{
+		real_search_initialized = false;
+		real_tracking_active = false;
+	}
 	if (ctrl.mode == RESET)
 	{
 		can1_motor[4].setspeed = 0;
@@ -940,12 +964,77 @@ void CONTROL::PANTILE::Update()
 	}
 	else if (ctrl.mode == CONTROL::REAL)
 	{
-		if (xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM)
-		{// 上位机给的是 rad，当前 Keep_Pantile 按 deg 计算
-			const float target_yaw_deg = xuc.GetTargetYaw() * 57.2957795f;
-			const float target_pitch_deg = xuc.GetTargetPitch() * 57.2957795f;
-			Keep_Pantile(target_yaw_deg, PANTILE::YAW, imu_pantile);
-			Keep_Pantile(target_pitch_deg, PANTILE::PITCH, imu_pantile);
+		if (xuc.Tx_TJ.mode_TJ == 1)
+		{
+			if (!real_search_initialized)
+			{
+				// 只在进入发射区后的第一次搜索时锁存真实云台反馈角度。
+				real_search_center_yaw = can1_motor[4].angle[now];
+				real_search_offset = 0;
+				real_search_direction = -1;
+				real_search_dwell = 0;
+				real_tracking_active = false;
+				real_search_initialized = true;
+			}
+
+			if (xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM)
+			{
+				// 有目标：停止搜索，继续使用原来的自瞄跟踪。
+				real_tracking_active = true;
+				const float target_yaw_deg = xuc.GetTargetYaw() * 57.2957795f;
+				const float target_pitch_deg = xuc.GetTargetPitch() * 57.2957795f;
+				Keep_Pantile(target_yaw_deg, PANTILE::YAW, imu_pantile);
+				Keep_Pantile(target_pitch_deg, PANTILE::PITCH, imu_pantile);
+			}
+			else
+			{
+				// 无目标：以到位时的实际云台角为中心，在相对±600范围内往复扫描。
+				if (real_tracking_active)
+				{
+					// 丢失目标时从实际角度接续扫描，中心仍保持到位时的角度。
+					real_search_offset = can1_motor[4].angle[now] - real_search_center_yaw;
+					while (real_search_offset > 4096.0f) real_search_offset -= 8192.0f;
+					while (real_search_offset < -4096.0f) real_search_offset += 8192.0f;
+					// 自瞄越过搜索边界后，也只按扫描步长逐步回到范围内。
+					if (real_search_offset <= -REAL_SEARCH_YAW_RANGE)
+						real_search_direction = 1;
+					else if (real_search_offset >= REAL_SEARCH_YAW_RANGE)
+						real_search_direction = -1;
+					real_search_dwell = 0;
+					real_tracking_active = false;
+				}
+				if (real_search_dwell > 0)
+				{
+					real_search_dwell--;
+				}
+				else
+				{
+					real_search_offset += real_search_direction * REAL_SEARCH_YAW_STEP;
+					if (real_search_direction < 0 && real_search_offset <= -REAL_SEARCH_YAW_RANGE)
+					{
+						real_search_offset = -REAL_SEARCH_YAW_RANGE;
+						real_search_direction = 1;
+						real_search_dwell = REAL_SEARCH_DWELL_CYCLES;
+					}
+					else if (real_search_direction > 0 && real_search_offset >= REAL_SEARCH_YAW_RANGE)
+					{
+						real_search_offset = REAL_SEARCH_YAW_RANGE;
+						real_search_direction = -1;
+						real_search_dwell = REAL_SEARCH_DWELL_CYCLES;
+					}
+				}
+
+				float search_yaw = real_search_center_yaw + real_search_offset;
+				while (search_yaw >= 8192.0f) search_yaw -= 8192.0f;
+				while (search_yaw < 0.0f) search_yaw += 8192.0f;
+				mark_yaw = search_yaw;
+			}
+		}
+		else
+		{
+			// REAL去程尚未到发射区，保持当前云台目标角，不启动搜索。
+			real_search_initialized = false;
+			real_tracking_active = false;
 		}
 		if (ctrl.pantile.mark_pitch >= 0.35f)  ctrl.pantile.mark_pitch = 0.35f;
 		if (ctrl.pantile.mark_pitch <= -0.324f) ctrl.pantile.mark_pitch = -0.324f;
@@ -979,7 +1068,7 @@ void CONTROL::SHOOTER::Update()
 	}
 	else if (ctrl.mode == CONTROL::REAL)
 	{
-		if (xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM && xuc.Tx_TJ.mode_TJ == 1)
+		if (xuc.Tx_TJ.mode_TJ == 1)
 		{
 			can2_motor[0].setspeed = -6000;
 			can2_motor[1].setspeed = 6000;
@@ -997,7 +1086,7 @@ void CONTROL::SHOOTER::Update()
 			can2_motor[2].shoot_num += 1;
 		}
 		fire_last_single = fire_now_single;
-		if(can2_motor[2].shoot_num >=50)
+		if(can2_motor[2].shoot_num >=50 && !ctrl.chassis.real_returning)
 		{
 			xuc.Tx_TJ.mode_TJ = 0;
 			if (!return_started)
