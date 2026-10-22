@@ -116,13 +116,15 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 		}
 		if (shoot_mode_now == Motor::single  )
 		{
+			const bool single_begin_this_cycle =
+				need_curcircle != 0 || single_state == SINGLE_BEGIN;
 			if (need_curcircle != 0 )
 			{
 				single_state = SINGLE_BEGIN;
 			}
 			if (single_state == SINGLE_BEGIN)
 			{
-				stopAngle = angle[now]+2700;//减速比36：1，拨弹盘一圈7发，单发即为5+1/7圈(现在是？？圈)
+				stopAngle = angle[now] + 8192 / 7; // 36:1 reduction, 7 slots: 5 + 1/7 motor turns.
 				if (stopAngle > 8192)
 				{
 					stopAngle -= 8192;
@@ -132,15 +134,12 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 				{
 					single_count = need_curcircle;
 				}
-
+				//single_target = sum_angle + 8192 / 7 + 8192 * need_curcircle;  // 按实际方向/圈数调整
 				if (need_curcircle > 0)
 				{
 					setspeed = 700;
 				}
-				/*else
-				{
-					setspeed = -700;
-				}*/
+
 				need_curcircle = 0;
 				single_state = SINGLE_RUN;
 			}
@@ -149,15 +148,16 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 				current = pid[speed].Position(setspeed - curspeed, 10000.f);
 				setcurrent = current;
 			}
-			if (angle[now] - angle[pre] < -7000 && single_count > 0) 
+			if (!single_begin_this_cycle && angle[now] - angle[pre] < -7000 && single_count > 0)
 			{
 				single_count--;
 			}
-			if (angle[now] - angle[pre] > 7000)
+			if (!single_begin_this_cycle && angle[now] - angle[pre] > 7000)
 			{
 				single_count++;
 			}
 			if (fabsl(stopAngle + 8192 * single_count - angle[now]) < 350)
+		/*	if (sum_angle >= single_target)*/
 			{
 				single_state = SINGLE_RESET;
 				setcurrent =0;
@@ -166,7 +166,7 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 			}
 		}
     }
-	//single_target = sum_angle + 2700 + 8192 * need_curcircle;  // 按实际方向/圈数调整
+	//single_target = sum_angle + 8192 / 7 + 8192 * need_curcircle;  // 按实际方向/圈数调整
 	//	if (sum_angle >= single_target) {   // 冲过目标立刻停
 	//		single_state = SINGLE_RESET;
 	//		current = 0;

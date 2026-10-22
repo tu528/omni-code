@@ -196,21 +196,23 @@ void RC::RC_Control()
 
 			fire_now = (rc.ch[1] >= 200 || rc.ch[1] <= -200);//单发
 
-			/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-			if (rc.ch[0] >= 200 || rc.ch[0] <= -200)//连发
+			// Finish the active single shot before accepting another firing mode.
+			if (can2_motor[2].shoot_mode_now != Motor::single)
 			{
-				can2_motor[2].shoot_mode_now = Motor::running;
-			}
-
-			else if (fire_now && !fire_last)
-			{
-				can2_motor[2].need_curcircle = 4;
-				can2_motor[2].shoot_mode_now = Motor::single;
-			}
-			else if (can2_motor[2].shoot_mode_now != Motor::single)
-			{
-				can2_motor[2].shoot_mode_now = Motor::stop;
-
+				// A single-shot edge takes priority when both channels are active.
+				if (fire_now && !fire_last)
+				{
+					can2_motor[2].need_curcircle = 5;
+					can2_motor[2].shoot_mode_now = Motor::single;
+				}
+				else if (!fire_now && (rc.ch[0] >= 200 || rc.ch[0] <= -200))
+				{
+					can2_motor[2].shoot_mode_now = Motor::running;
+				}
+				else
+				{
+					can2_motor[2].shoot_mode_now = Motor::stop;
+				}
 			}
 			fire_last = fire_now;
 		}
