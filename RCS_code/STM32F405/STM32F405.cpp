@@ -39,7 +39,7 @@ Motor can1_motor[CAN1_MOTOR_NUM] = {
 Motor can2_motor[CAN2_MOTOR_NUM] = {
 	Motor(M3508,SPD,shooter, ID4, PID(10.f, 0.0f, 1.5f,0.f)),//现在的电调左右应该是反的，所以1和4交换了一下位置
 	Motor(M3508,SPD,shooter, ID3, PID(10.f, 0.0f, 1.5f,0.f)),
-	Motor(M2006,ACE,supply,  ID2, PID(20.f, 0.05f, 0.f,0.f),PID(0.05f, 0.f, 0.f,0.f)),
+	Motor(M2006,ACE,supply,  ID2, PID(4.f, 0.05f, 1.5f,0.f),PID(0.05f, 0.f, 0.f,0.f)),//拨弹速度环：Kp降到4保稳定，加D=1.5抑制单发超调（对标底盘）
 	Motor(M3508,POS,pantile, ID1, PID(40.f, 0.0f, 1.5f,0.f),PID(0.8f, 0.005f, 15.0f,0.f)),
 	Motor(M3508,POS,pantile, ID5, PID(40.f, 0.0f, 1.5f,0.f),PID(0.8f, 0.005f, 15.0f,0.f)),
 	Motor(M3508,SPD,pantile, ID6, PID(10.f, 0.0f, 1.5f,0.f))

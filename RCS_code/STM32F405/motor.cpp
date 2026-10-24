@@ -111,6 +111,8 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 			setspeed = 0;
 			need_curcircle = 0;
 			single_count = 0;
+			// 停止时清积分：否则制动过程把积分压到负饱和，停稳后残余电流会推着电机来回爬。
+			pid[speed].m_error[INTEGRATE] = 0.0f;
 			current = pid[speed].Position(setspeed - curspeed, 10000.f);
 			setcurrent = current;
 		}
@@ -122,7 +124,11 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 			}
 			if (single_state == SINGLE_BEGIN)
 			{
-				stopAngle = angle[now]+2700;//减速比36：1，拨弹盘一圈7发，单发即为5+1/7圈(现在是？？圈)
+				// 起转前清积分，避免沿用上一发停车时的残余偏置。
+				pid[speed].m_error[INTEGRATE] = 0.0f;
+				// 减速比36:1，拨弹盘一圈7发：单发=1/7圈输出=36/7圈电机=5+1/7圈。
+				// 编码器8192 counts/圈，1/7圈≈1170 counts；整圈数由 need_curcircle 给出（5）。
+				stopAngle = angle[now] + 1170;
 				if (stopAngle > 8192)
 				{
 					stopAngle -= 8192;
@@ -132,6 +138,9 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 				{
 					single_count = need_curcircle;
 				}
+
+				// 记录起转时的总剩余角度（counts），用于按角度规划转速。
+				single_initial_error = stopAngle + 8192.0f * single_count - angle[now];
 
 				if (need_curcircle > 0)
 				{
@@ -146,18 +155,48 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 			}
 			if (single_state == SINGLE_RUN)
 			{
+				// 先更新跨圈计数，保证 remaining 连续（否则过圈那一拍会误判为倒退）。
+				if (angle[now] - angle[pre] < -7000 && single_count > 0)
+				{
+					single_count--;
+				}
+				if (angle[now] - angle[pre] > 7000)
+				{
+					single_count++;
+				}
+
+				// 按角度规划转速：前 3600 counts 加速到 700，最后 3000 counts 提前减速到 150，
+				// 让停止窗口在低速下进入，靠惯性滑过目标角的量就小了。
+				float remaining = stopAngle + 8192.0f * single_count - angle[now];
+				float traveled = single_initial_error - remaining;
+				if (traveled < 0.0f) traveled = 0.0f;
+
+				const float RAMP_UP = 3600.0f;
+				const float RAMP_DOWN = 3000.0f;
+				if (traveled < RAMP_UP)
+				{
+					setspeed = 150.0f + 550.0f * (traveled / RAMP_UP);
+				}
+				else if (remaining > RAMP_DOWN)
+				{
+					setspeed = 700.0f;
+				}
+				else
+				{
+					setspeed = 150.0f + 550.0f * (remaining / RAMP_DOWN);
+					if (setspeed < 150.0f) setspeed = 150.0f;
+				}
+				if (setspeed > 700.0f) setspeed = 700.0f;
+
 				current = pid[speed].Position(setspeed - curspeed, 10000.f);
 				setcurrent = current;
+				// 大误差时清积分：起转段和过冲段不累积，避免积分饱和把峰值顶到 900+。
+				if (fabsf(setspeed - curspeed) > 150.0f)
+				{
+					pid[speed].m_error[INTEGRATE] = 0.0f;
+				}
 			}
-			if (angle[now] - angle[pre] < -7000 && single_count > 0) 
-			{
-				single_count--;
-			}
-			if (angle[now] - angle[pre] > 7000)
-			{
-				single_count++;
-			}
-			if (fabsl(stopAngle + 8192 * single_count - angle[now]) < 350)
+			if (fabsl(stopAngle + 8192 * single_count - angle[now]) < 200)
 			{
 				single_state = SINGLE_RESET;
 				setcurrent =0;
