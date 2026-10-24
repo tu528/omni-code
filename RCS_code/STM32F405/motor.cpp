@@ -118,6 +118,7 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 		}
 		if (shoot_mode_now == Motor::single  )
 		{
+			const bool single_begin_this_cycle = (need_curcircle != 0) || (single_state == SINGLE_BEGIN);
 			if (need_curcircle != 0 )
 			{
 				single_state = SINGLE_BEGIN;
@@ -156,11 +157,11 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 			if (single_state == SINGLE_RUN)
 			{
 				// 先更新跨圈计数，保证 remaining 连续（否则过圈那一拍会误判为倒退）。
-				if (angle[now] - angle[pre] < -7000 && single_count > 0)
+				if (!single_begin_this_cycle && angle[now] - angle[pre] < -7000 && single_count > 0)
 				{
 					single_count--;
 				}
-				if (angle[now] - angle[pre] > 7000)
+				if (!single_begin_this_cycle && angle[now] - angle[pre] > 7000)
 				{
 					single_count++;
 				}

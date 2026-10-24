@@ -53,6 +53,7 @@ public:
 	};
 	single_state_e single_state = SINGLE_RESET;
 	int8_t single_count;//
+	int32_t single_target;
 	int8_t shoot_num ;//单发数量
 	volatile uint8_t shoot_mode_now = stop;
 	enum shoot_mode { stop=0, running , single };//running:连续拨弹 stop:停止 single:单次拨弹

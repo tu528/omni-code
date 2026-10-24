@@ -7,12 +7,8 @@
       "RelativeMoniker": "D:0:0:{927912FA-5A3C-4C06-8495-3A365AE16CDD}|STM32F405\\STM32F405.vcxproj|solutionrelative:STM32F405\\control.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{927912FA-5A3C-4C06-8495-3A365AE16CDD}|STM32F405\\STM32F405.vcxproj|C:\\Users\\wu\\Desktop\\omni-code\\RCS_code\\STM32F405\\RC.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{927912FA-5A3C-4C06-8495-3A365AE16CDD}|STM32F405\\STM32F405.vcxproj|solutionrelative:STM32F405\\RC.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{927912FA-5A3C-4C06-8495-3A365AE16CDD}|STM32F405\\STM32F405.vcxproj|C:\\Users\\wu\\Desktop\\omni-code\\RCS_code\\STM32F405\\STM32F405.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{927912FA-5A3C-4C06-8495-3A365AE16CDD}|STM32F405\\STM32F405.vcxproj|solutionrelative:STM32F405\\STM32F405.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{927912FA-5A3C-4C06-8495-3A365AE16CDD}|STM32F405\\STM32F405.vcxproj|C:\\Users\\wu\\Desktop\\omni-code\\RCS_code\\STM32F405\\motor.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{927912FA-5A3C-4C06-8495-3A365AE16CDD}|STM32F405\\STM32F405.vcxproj|solutionrelative:STM32F405\\motor.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,15 +22,15 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "STM32F405.cpp",
-              "DocumentMoniker": "C:\\Users\\wu\\Desktop\\omni-code\\RCS_code\\STM32F405\\STM32F405.cpp",
-              "RelativeDocumentMoniker": "STM32F405\\STM32F405.cpp",
-              "ToolTip": "C:\\Users\\wu\\Desktop\\omni-code\\RCS_code\\STM32F405\\STM32F405.cpp",
-              "RelativeToolTip": "STM32F405\\STM32F405.cpp",
-              "ViewState": "AgIAABUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "motor.cpp",
+              "DocumentMoniker": "C:\\Users\\wu\\Desktop\\omni-code\\RCS_code\\STM32F405\\motor.cpp",
+              "RelativeDocumentMoniker": "STM32F405\\motor.cpp",
+              "ToolTip": "C:\\Users\\wu\\Desktop\\omni-code\\RCS_code\\STM32F405\\motor.cpp",
+              "RelativeToolTip": "STM32F405\\motor.cpp",
+              "ViewState": "AgIAAF0AAAAAAAAAAAAAAH4AAABXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-10-19T10:52:00.869Z",
+              "WhenOpened": "2026-10-22T14:06:12.565Z",
               "EditorCaption": ""
             },
             {
@@ -45,22 +41,9 @@
               "RelativeDocumentMoniker": "STM32F405\\control.cpp",
               "ToolTip": "C:\\Users\\wu\\Desktop\\omni-code\\RCS_code\\STM32F405\\control.cpp",
               "RelativeToolTip": "STM32F405\\control.cpp",
-              "ViewState": "AgIAAKcCAAAAAAAAAAAAwEgEAAAyAAAAAAAAAA==",
+              "ViewState": "AgIAADcEAAAAAAAAAAAkwEwEAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-10-13T13:01:53.499Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "RC.cpp",
-              "DocumentMoniker": "C:\\Users\\wu\\Desktop\\omni-code\\RCS_code\\STM32F405\\RC.cpp",
-              "RelativeDocumentMoniker": "STM32F405\\RC.cpp",
-              "ToolTip": "C:\\Users\\wu\\Desktop\\omni-code\\RCS_code\\STM32F405\\RC.cpp",
-              "RelativeToolTip": "STM32F405\\RC.cpp",
-              "ViewState": "AgIAADUAAAAAAAAAAAAAAGgAAAADAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-10-13T13:15:03.324Z",
+              "WhenOpened": "2026-10-22T13:50:52.589Z",
               "EditorCaption": ""
             }
           ]

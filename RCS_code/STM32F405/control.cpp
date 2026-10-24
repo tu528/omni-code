@@ -6,9 +6,10 @@
 #include "RC.h"
 #include "motor.h"
 #include "xuc.h"
+#include "task.h"
 
 #define MAX_SPEED 3000.0f
-#define PATH_FORWARD_SPEED 800.0f   // DEAD和REAL共用的平移目标速度，当前用于低速上车测试
+#define PATH_FORWARD_SPEED 2500.0f   // DEAD和REAL共用的平移目标速度
 
 #define PATH_YAW_KP 20.0f             // DEAD和REAL共用的yaw误差比例增益
 #define PATH_YAW_MAX_SPEED 500.0f     // DEAD和REAL共用的最大speedz航向修正
@@ -22,6 +23,10 @@
 #define REAL_SEARCH_YAW_RANGE 600.0f   // REAL无目标时，以到位角为中心的搜索半径
 #define REAL_SEARCH_YAW_STEP 2.0f      // 每个ControlTask周期的搜索步长，约17.6度/秒
 #define REAL_SEARCH_DWELL_CYCLES 40    // 搜索端点停留约200ms（ControlTask周期约5ms）
+#define REAL_RETURN_TIMEOUT_MS 180000UL // REAL启动后3分钟仍未收到返程指令时的保护时间
+
+// REAL自动流程的计时起点，单位：FreeRTOS tick。
+static uint32_t real_start_tick = 0;
 
 float clamp_speed(float target)
 {
@@ -263,20 +268,20 @@ float CONTROL::CHASSIS::RealMeasuredSpeed(uint8_t real_part)
 	case 9: // 第10段：向左
 		traveled_speed = vy;
 		break;
-	case 10: // 返程第1段：向右875
-	case 12: // 返程第3段：向右550
-	case 16: // 返程第7段：向右650
+	case 10: // 返程第1段：向右1750
+	case 12: // 返程第3段：向右1100
+	case 16: // 返程第7段：向右1300
 		traveled_speed = -vy;
 		break;
-	case 11: // 返程第2段：向后450
-	case 13: // 返程第4段：向后550
-	case 15: // 返程第6段：向后650
-	case 17: // 返程第8段：向后1550
-	case 19: // 返程第10段：向后575
+	case 11: // 返程第2段：向后900
+	case 13: // 返程第4段：向后1100
+	case 15: // 返程第6段：向后1300
+	case 17: // 返程第8段：向后3100
+	case 19: // 返程第10段：向后1150
 		traveled_speed = vx;
 		break;
-	case 14: // 返程第5段：向左550
-	case 18: // 返程第9段：向左650
+	case 14: // 返程第5段：向左1100
+	case 18: // 返程第9段：向左1300
 		traveled_speed = vy;
 		break;
 	default:
@@ -350,24 +355,42 @@ float CONTROL::CHASSIS::RealSpeedProfile(
 	return max_speed;
 }
 
+// 统一处理REAL返程启动，避免上位机指令和超时保护各写一套初始化逻辑。
+static void StartRealReturn()
+{
+	if (ctrl.chassis.real_returning || ctrl.chassis.real_part < 20)
+		return;
+
+	ctrl.chassis.real_returning = true;
+	ctrl.chassis.real_return_part = 0;
+	ctrl.chassis.real_d0 = can1_motor[0].distance;
+	ctrl.chassis.real_d1 = can1_motor[1].distance;
+	ctrl.chassis.real_d2 = can1_motor[2].distance;
+	ctrl.chassis.real_d3 = can1_motor[3].distance;
+	ctrl.chassis.real_yaw_target = imu_pantile.GetAngleYaw();
+	xuc.Tx_TJ.mode_TJ = 0;
+	ctrl.shooter.return_started = true;
+	ctrl.chassis.speedx = 0;
+	ctrl.chassis.speedy = 0;
+	ctrl.chassis.speedz = 0;
+}
+
 void CONTROL::CHASSIS::Update()
 {
 	// 上位机在REAL发射区发送control_TJ=2，表示停止射击并开始原路返程。
-	if (real_auto_active && real_part >= 20 && !real_returning &&
-		xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_RETURN)
+	const bool real_return_command =
+		real_auto_active && real_part >= 20 && !real_returning &&
+		xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_RETURN;
+
+	// 计时从进入REAL开始，但只在到达射击区后触发，避免中途掉头走错路线。
+	const bool real_return_timeout =
+		real_auto_active && real_part >= 20 && !real_returning &&
+		(uint32_t)(xTaskGetTickCount() - real_start_tick) >=
+		pdMS_TO_TICKS(REAL_RETURN_TIMEOUT_MS);
+
+	if (real_return_command || real_return_timeout)
 	{
-		real_returning = true;
-		real_return_part = 0;
-		real_d0 = can1_motor[0].distance;
-		real_d1 = can1_motor[1].distance;
-		real_d2 = can1_motor[2].distance;
-		real_d3 = can1_motor[3].distance;
-		real_yaw_target = imu_pantile.GetAngleYaw();
-		xuc.Tx_TJ.mode_TJ = 0;
-		ctrl.shooter.return_started = true;
-		speedx = 0;
-		speedy = 0;
-		speedz = 0;
+		StartRealReturn();
 	}
 	if (ctrl.mode == RESET)
 	{
@@ -455,6 +478,9 @@ void CONTROL::CHASSIS::Update()
 		can1_motor[2].setspeed = (int32_t)Ramp(target2, can1_motor[2].setspeed, ramp_slope);
 		can1_motor[3].setspeed = (int32_t)Ramp(target3, can1_motor[3].setspeed, ramp_slope);
 	}
+	// DEAD模式说明：以下代码保留为固定路线测试参考，目前整体注释，不参与编译。
+	// DEAD原始路线为“前1 m → 右1 m → 后1 m → 左1 m”，方向由车头坐标定义。
+	// DEAD使用四个底盘编码器计算dx、dy，并使用云台IMU的yaw修正底盘方向。
 	//else if (ctrl.mode == CONTROL::DEAD)
 	//{
 	//	// DEAD一次完整流程：前1m → 右1m → 后1m → 左1m
@@ -634,8 +660,8 @@ void CONTROL::CHASSIS::Update()
 	else if (ctrl.mode == CONTROL::REAL)
 	{
 		// REAL一次完整流程：
-		// 前575 → 右650 → 前1550 → 左650 → 前650
-		// → 右550 → 前550 → 左550 → 前450 → 左875
+		// 前1150 → 右1300 → 前3100 → 左1300 → 前1300
+		// → 右1100 → 前1100 → 左1100 → 前900 → 左1750
 		if (!real_started)//初始化
 		{
 			real_d0 = can1_motor[0].distance;
@@ -647,6 +673,7 @@ void CONTROL::CHASSIS::Update()
 			real_returning = false;
 			real_return_part = 0;
 			real_auto_active = true;
+			real_start_tick = xTaskGetTickCount();
 			real_started = true;
 		}
 		// real_yaw_target是进入REAL时的目标航向；当前yaw偏离后用speedz纠正底盘
@@ -687,85 +714,85 @@ void CONTROL::CHASSIS::Update()
 			: real_part;
 		switch (real_motion_part)
 		{
-		case 0: // 第1段：向前575 mm
+		case 0: // 第1段：向前1150 mm
 			real_traveled_distance = real_dx;
-			real_target_distance = 575.0f;
+			real_target_distance = 1150.0f;
 			break;
-		case 1: // 第2段：向右650 mm
+		case 1: // 第2段：向右1300 mm
 			real_traveled_distance = real_dy;
-			real_target_distance = 650.0f;
+			real_target_distance = 1300.0f;
 			break;
-		case 2: // 第3段：向前1550 mm
+		case 2: // 第3段：向前3100 mm
 			real_traveled_distance = real_dx;
-			real_target_distance = 1550.0f;
+			real_target_distance = 3100.0f;
 			break;
-		case 3: // 第4段：向左650 mm
+		case 3: // 第4段：向左1300 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 650.0f;
+			real_target_distance = 1300.0f;
 			break;
-		case 4: // 第5段：向前650 mm
+		case 4: // 第5段：向前1300 mm
 			real_traveled_distance = real_dx;
-			real_target_distance = 650.0f;
+			real_target_distance = 1300.0f;
 			break;
-		case 5: // 第6段：向右550 mm
+		case 5: // 第6段：向右1100 mm
 			real_traveled_distance = real_dy;
-			real_target_distance = 550.0f;
+			real_target_distance = 1100.0f;
 			break;
-		case 6: // 第7段：向前550 mm
+		case 6: // 第7段：向前1100 mm
 			real_traveled_distance = real_dx;
-			real_target_distance = 550.0f;
+			real_target_distance = 1100.0f;
 			break;
-		case 7: // 第8段：向左550 mm
+		case 7: // 第8段：向左1100 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 550.0f;
+			real_target_distance = 1100.0f;
 			break;
-		case 8: // 第9段：向前450 mm
+		case 8: // 第9段：向前900 mm
 			real_traveled_distance = real_dx;
-			real_target_distance = 450.0f;
+			real_target_distance = 900.0f;
 			break;
-		case 9: // 第10段：向左875 mm
+		case 9: // 第10段：向左1750 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 875.0f;
+			real_target_distance = 1750.0f;
 			break;
-		case 10: // 返程第1段：向右875 mm
+		case 10: // 返程第1段：向右1750 mm
 			real_traveled_distance = real_dy;
-			real_target_distance = 875.0f;
+			real_target_distance = 1750.0f;
 			break;
-		case 11: // 返程第2段：向后450 mm
+		case 11: // 返程第2段：向后900 mm
 			real_traveled_distance = -real_dx;
-			real_target_distance = 450.0f;
+			real_target_distance = 900.0f;
 			break;
-		case 12: // 返程第3段：向右550 mm
+		case 12: // 返程第3段：向右1100 mm
 			real_traveled_distance = real_dy;
-			real_target_distance = 550.0f;
+			real_target_distance = 1100.0f;
 			break;
-		case 13: // 返程第4段：向后550 mm
+		case 13: // 返程第4段：向后1100 mm
 			real_traveled_distance = -real_dx;
-			real_target_distance = 550.0f;
+			real_target_distance = 1100.0f;
 			break;
-		case 14: // 返程第5段：向左550 mm
+		case 14: // 返程第5段：向左1100 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 550.0f;
+			real_target_distance = 1100.0f;
 			break;
-		case 15: // 返程第6段：向后650 mm
+		case 15: // 返程第6段：向后1300 mm
 			real_traveled_distance = -real_dx;
-			real_target_distance = 650.0f;
+			real_target_distance = 1300.0f;
 			break;
-		case 16: // 返程第7段：向右650 mm
+		case 16: // 返程第7段：向右1300 mm
 			real_traveled_distance = real_dy;
-			real_target_distance = 650.0f;
+			real_target_distance = 1300.0f;
 			break;
-		case 17: // 返程第8段：向后1550 mm
+		case 17: // 返程第8段：向后3100 mm
 			real_traveled_distance = -real_dx;
-			real_target_distance = 1550.0f;
+			real_target_distance = 3100.0f;
 			break;
-		case 18: // 返程第9段：向左650 mm
+		case 18: // 返程第9段：向左1300 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 650.0f;
+			real_target_distance = 1300.0f;
 			break;
-		case 19: // 返程第10段：向后575 mm
+		case 19: // 返程第10段：向后1150 mm
 			real_traveled_distance = -real_dx;
-			real_target_distance = 575.0f;
+			real_target_distance = 1150.0f;
 			break;
 		default:
 			real_traveled_distance = 0.0f;
@@ -862,22 +889,22 @@ void CONTROL::CHASSIS::Update()
 				speedx = 0;
 				speedy = -real_speed;
 				break;
-			case 10: // 返程第1段：向右875
-			case 12: // 返程第3段：向右550
-			case 16: // 返程第7段：向右650
+			case 10: // 返程第1段：向右1750
+			case 12: // 返程第3段：向右1100
+			case 16: // 返程第7段：向右1300
 				speedx = 0;
 				speedy = real_speed;
 				break;
-			case 11: // 返程第2段：向后450
-			case 13: // 返程第4段：向后550
-			case 15: // 返程第6段：向后650
-			case 17: // 返程第8段：向后1550
-			case 19: // 返程第10段：向后575
+			case 11: // 返程第2段：向后900
+			case 13: // 返程第4段：向后1100
+			case 15: // 返程第6段：向后1300
+			case 17: // 返程第8段：向后3100
+			case 19: // 返程第10段：向后1150
 				speedx = -real_speed;
 				speedy = 0;
 				break;
-			case 14: // 返程第5段：向左550
-			case 18: // 返程第9段：向左650
+			case 14: // 返程第5段：向左1100
+			case 18: // 返程第9段：向左1300
 				speedx = 0;
 				speedy = -real_speed;
 				break;
@@ -1050,28 +1077,28 @@ void CONTROL::SHOOTER::Update()
 
 	if (ctrl.mode == CONTROL::AUTOAIM)
 	{
-		can2_motor[0].setspeed = -6000;
-		can2_motor[1].setspeed = 6000;
+		can2_motor[0].setspeed = -7000;
+		can2_motor[1].setspeed = 7000;
 		fire_now_single = (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() &&xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM);
 		if(fire_now_single&&!(fire_last_single)&& can2_motor[2].shoot_mode_now == Motor::stop)
 		{
 			can2_motor[2].shoot_mode_now = Motor::single;
-			can2_motor[2].need_curcircle = 4;
+			can2_motor[2].need_curcircle = 5;
 		}
 		fire_last_single = fire_now_single;
 	}
 	 else if (ctrl.mode == CONTROL::FIRE)
 	{
-		can2_motor[0].setspeed = -6000;
-		can2_motor[1].setspeed = 6000;
+		can2_motor[0].setspeed = -7000;
+		can2_motor[1].setspeed = 7000;
 
 	}
 	else if (ctrl.mode == CONTROL::REAL)
 	{
 		if (xuc.Tx_TJ.mode_TJ == 1)
 		{
-			can2_motor[0].setspeed = -6000;
-			can2_motor[1].setspeed = 6000;
+			can2_motor[0].setspeed = -7000;
+			can2_motor[1].setspeed = 7000;
 		}
 		else
 		{
@@ -1082,7 +1109,7 @@ void CONTROL::SHOOTER::Update()
 		if (fire_now_single && !(fire_last_single) && can2_motor[2].shoot_mode_now == Motor::stop)
 		{
 			can2_motor[2].shoot_mode_now = Motor::single;
-			can2_motor[2].need_curcircle = 4;
+			can2_motor[2].need_curcircle = 5;
 			can2_motor[2].shoot_num += 1;
 		}
 		fire_last_single = fire_now_single;
