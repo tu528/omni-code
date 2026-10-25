@@ -34,18 +34,18 @@ public:
 		float dead_d0, dead_d1, dead_d2, dead_d3;
 		// REAL模式是否已经完成起点记录；与DEAD完全独立
 		bool  real_started = false;
-		// REAL自主流程锁存：去程结束进入AUTOAIM后，防止遥控器拨杆覆盖当前阶段
+		// REAL自主流程进行标志：开始去程时置位，返航完成或切档时清除
 		bool  real_auto_active = false;
 		// REAL是否正在按原路线返程
 		bool  real_returning = false;
-		// REAL返程当前运动段：0右1750、1后900、2右1100、3后1100、4左1100
-		// 5后1300、6右1300、7后3100、8左1300、9后1150、10返程完成
+		// REAL返程当前运动段（单位mm）：0右1950、1后900、2右1150、3后1050、4左1300
+		// 5后1025、6右1300、7后3050、8左1200、9后1100、10返程完成
 		uint8_t real_return_part = 0;
 		// REAL返程结束锁存：等待遥控器拨杆离开REAL后才允许重新选择模式
 		bool  real_completed = false;
-		// REAL当前运动段：
-		// 0前1150、1右1300、2前3100、3左1300、4前1300
-		// 5右1100、6前1100、7左1100、8前900、9左1750、10全部完成
+		// REAL去程当前运动段（单位mm）：
+		// 0前1150、1右1300、2前3100、3左1500、4前1075
+		// 5右1300、6前1025、7左1150、8前925、9左2000；20表示已到发射区
 		uint8_t real_part = 0;
 		// REAL进入时记录的IMU世界yaw，后续用它保持底盘航向
 		float real_yaw_target = 0.0f;
@@ -83,7 +83,7 @@ public:
 		float keep_angle1{}, keep_angle2{};
 		// REAL到达发射区后，记录当前云台角度并在相对范围内搜索目标
 		bool real_search_initialized = false;
-		bool real_tracking_active = false;
+		bool real_tracking_active = false; // 本次入区已找到过目标，锁存至离开发射区
 		float real_search_center_yaw = 0.0f;
 		float real_search_offset = 0.0f;
 		int8_t real_search_direction = -1;

@@ -9,7 +9,7 @@
 #include "task.h"
 
 #define MAX_SPEED 3000.0f
-#define PATH_FORWARD_SPEED 2500.0f   // DEAD和REAL共用的平移目标速度
+#define PATH_FORWARD_SPEED 1500.0f   // DEAD和REAL共用的平移目标速度
 
 #define PATH_YAW_KP 20.0f             // DEAD和REAL共用的yaw误差比例增益
 #define PATH_YAW_MAX_SPEED 500.0f     // DEAD和REAL共用的最大speedz航向修正
@@ -101,7 +101,7 @@ void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU fram
 	else if (type == PITCH)
 	{
 		delta = ctrl.GetDelta(angleKeep - frameOfReference.GetAnglePitch());
-		if (abs(delta) >= 1.0f)
+		if (abs(delta) >= 0.3f)
 		mark_pitch += pantile_PID[PANTILE::PITCH].Delta(delta) / 57.2957795f;//deg->rad
 	}
 }
@@ -268,20 +268,20 @@ float CONTROL::CHASSIS::RealMeasuredSpeed(uint8_t real_part)
 	case 9: // 第10段：向左
 		traveled_speed = vy;
 		break;
-	case 10: // 返程第1段：向右1750
-	case 12: // 返程第3段：向右1100
+	case 10: // 返程第1段：向右1950
+	case 12: // 返程第3段：向右1150
 	case 16: // 返程第7段：向右1300
 		traveled_speed = -vy;
 		break;
 	case 11: // 返程第2段：向后900
-	case 13: // 返程第4段：向后1100
-	case 15: // 返程第6段：向后1300
-	case 17: // 返程第8段：向后3100
-	case 19: // 返程第10段：向后1150
+	case 13: // 返程第4段：向后1050
+	case 15: // 返程第6段：向后1025
+	case 17: // 返程第8段：向后3050
+	case 19: // 返程第10段：向后1100
 		traveled_speed = vx;
 		break;
-	case 14: // 返程第5段：向左1100
-	case 18: // 返程第9段：向左1300
+	case 14: // 返程第5段：向左1300
+	case 18: // 返程第9段：向左1200
 		traveled_speed = vy;
 		break;
 	default:
@@ -659,9 +659,9 @@ void CONTROL::CHASSIS::Update()
 	//}
 	else if (ctrl.mode == CONTROL::REAL)
 	{
-		// REAL一次完整流程：
-		// 前1150 → 右1300 → 前3100 → 左1300 → 前1300
-		// → 右1100 → 前1100 → 左1100 → 前900 → 左1750
+		// REAL去程路线（返程使用单独标定的距离）：
+		// 前1150 → 右1300 → 前3100 → 左1500 → 前1075
+		// → 右1300 → 前1025 → 左1150 → 前925 → 左2000（单位：mm）
 		if (!real_started)//初始化
 		{
 			real_d0 = can1_motor[0].distance;
@@ -673,7 +673,7 @@ void CONTROL::CHASSIS::Update()
 			real_returning = false;
 			real_return_part = 0;
 			real_auto_active = true;
-			real_start_tick = xTaskGetTickCount();
+			real_start_tick = xTaskGetTickCount(); // 每次新进入REAL均重新记录计时起点
 			real_started = true;
 		}
 		// real_yaw_target是进入REAL时的目标航向；当前yaw偏离后用speedz纠正底盘
@@ -696,7 +696,7 @@ void CONTROL::CHASSIS::Update()
 			real_yaw_correction = -PATH_YAW_MAX_SPEED;
 		speedz = (int32_t)real_yaw_correction;
 
-		// real_delta_d0~d3是本段四轮里程增量；real_dx、real_dy是本段位移
+		// real_delta_d0~d3是本段四轮里程增量；real_dx向前为正、real_dy向右为正，单位mm
 		float real_delta_d0 = can1_motor[0].distance - real_d0;
 		float real_delta_d1 = can1_motor[1].distance - real_d1;
 		float real_delta_d2 = can1_motor[2].distance - real_d2;
@@ -726,73 +726,73 @@ void CONTROL::CHASSIS::Update()
 			real_traveled_distance = real_dx;
 			real_target_distance = 3100.0f;
 			break;
-		case 3: // 第4段：向左1300 mm
+		case 3: // 第4段：向左1500 mm
 			real_traveled_distance = -real_dy;
+			real_target_distance = 1500.0f;
+			break;
+		case 4: // 第5段：向前1075 mm
+			real_traveled_distance = real_dx;
+			real_target_distance = 1075.0f;
+			break;
+		case 5: // 第6段：向右1300 mm
+			real_traveled_distance = real_dy;
 			real_target_distance = 1300.0f;
 			break;
-		case 4: // 第5段：向前1300 mm
+		case 6: // 第7段：向前1025 mm
 			real_traveled_distance = real_dx;
-			real_target_distance = 1300.0f;
+			real_target_distance = 1025.0f;
 			break;
-		case 5: // 第6段：向右1100 mm
-			real_traveled_distance = real_dy;
-			real_target_distance = 1100.0f;
-			break;
-		case 6: // 第7段：向前1100 mm
-			real_traveled_distance = real_dx;
-			real_target_distance = 1100.0f;
-			break;
-		case 7: // 第8段：向左1100 mm
+		case 7: // 第8段：向左1150 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 1100.0f;
+			real_target_distance = 1150.0f;
 			break;
-		case 8: // 第9段：向前900 mm
+		case 8: // 第9段：向前925 mm
 			real_traveled_distance = real_dx;
-			real_target_distance = 900.0f;
+			real_target_distance = 925.0f;
 			break;
-		case 9: // 第10段：向左1750 mm
+		case 9: // 第10段：向左2000 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 1750.0f;
+			real_target_distance = 2000.0f;
 			break;
-		case 10: // 返程第1段：向右1750 mm
+		case 10: // 返程第1段：向右1950 mm
 			real_traveled_distance = real_dy;
-			real_target_distance = 1750.0f;
+			real_target_distance = 1950.0f;
 			break;
 		case 11: // 返程第2段：向后900 mm
 			real_traveled_distance = -real_dx;
 			real_target_distance = 900.0f;
 			break;
-		case 12: // 返程第3段：向右1100 mm
+		case 12: // 返程第3段：向右1150 mm
 			real_traveled_distance = real_dy;
-			real_target_distance = 1100.0f;
+			real_target_distance = 1150.0f;
 			break;
-		case 13: // 返程第4段：向后1100 mm
+		case 13: // 返程第4段：向后1050 mm
 			real_traveled_distance = -real_dx;
-			real_target_distance = 1100.0f;
+			real_target_distance = 1050.0f;
 			break;
-		case 14: // 返程第5段：向左1100 mm
+		case 14: // 返程第5段：向左1300 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 1100.0f;
-			break;
-		case 15: // 返程第6段：向后1300 mm
-			real_traveled_distance = -real_dx;
 			real_target_distance = 1300.0f;
+			break;
+		case 15: // 返程第6段：向后1025 mm
+			real_traveled_distance = -real_dx;
+			real_target_distance = 1025.0f;
 			break;
 		case 16: // 返程第7段：向右1300 mm
 			real_traveled_distance = real_dy;
 			real_target_distance = 1300.0f;
 			break;
-		case 17: // 返程第8段：向后3100 mm
+		case 17: // 返程第8段：向后3050 mm
 			real_traveled_distance = -real_dx;
-			real_target_distance = 3100.0f;
+			real_target_distance = 3050.0f;
 			break;
-		case 18: // 返程第9段：向左1300 mm
+		case 18: // 返程第9段：向左1200 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 1300.0f;
+			real_target_distance = 1200.0f;
 			break;
-		case 19: // 返程第10段：向后1150 mm
+		case 19: // 返程第10段：向后1100 mm
 			real_traveled_distance = -real_dx;
-			real_target_distance = 1150.0f;
+			real_target_distance = 1100.0f;
 			break;
 		default:
 			real_traveled_distance = 0.0f;
@@ -820,7 +820,7 @@ void CONTROL::CHASSIS::Update()
 			}
 			else if (!real_returning)
 			{
-				// REAL去程第十段完成，进入AUTOAIM等待射击。
+				// REAL去程第十段完成，保持REAL模式并开启发射区自瞄。
 				ctrl.chassis.real_d0 = can1_motor[0].distance;
 				ctrl.chassis.real_d1 = can1_motor[1].distance;
 				ctrl.chassis.real_d2 = can1_motor[2].distance;
@@ -851,8 +851,16 @@ void CONTROL::CHASSIS::Update()
 				ctrl.chassis.real_auto_active = false;
 				ctrl.chassis.real_completed = true;
 				ctrl.mode = CONTROL::RESET;
+				xuc.Tx_TJ.mode_TJ = 0;
 				speedx = 0;
 				speedy = 0;
+				speedz = 0;
+				real_yaw_error = 0.0f;
+				can2_motor[2].need_curcircle = 0;
+				can2_motor[2].single_count = 0;
+				can2_motor[2].shoot_mode_now = Motor::stop;
+				ctrl.shooter.fire_now_single = false;
+				ctrl.shooter.fire_last_single = false;
 			}
 		}
 		else
@@ -889,22 +897,22 @@ void CONTROL::CHASSIS::Update()
 				speedx = 0;
 				speedy = -real_speed;
 				break;
-			case 10: // 返程第1段：向右1750
-			case 12: // 返程第3段：向右1100
+			case 10: // 返程第1段：向右1950
+			case 12: // 返程第3段：向右1150
 			case 16: // 返程第7段：向右1300
 				speedx = 0;
 				speedy = real_speed;
 				break;
 			case 11: // 返程第2段：向后900
-			case 13: // 返程第4段：向后1100
-			case 15: // 返程第6段：向后1300
-			case 17: // 返程第8段：向后3100
-			case 19: // 返程第10段：向后1150
+			case 13: // 返程第4段：向后1050
+			case 15: // 返程第6段：向后1025
+			case 17: // 返程第8段：向后3050
+			case 19: // 返程第10段：向后1100
 				speedx = -real_speed;
 				speedy = 0;
 				break;
-			case 14: // 返程第5段：向左1100
-			case 18: // 返程第9段：向左1300
+			case 14: // 返程第5段：向左1300
+			case 18: // 返程第9段：向左1200
 				speedx = 0;
 				speedy = -real_speed;
 				break;
@@ -1006,30 +1014,16 @@ void CONTROL::PANTILE::Update()
 
 			if (xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM)
 			{
-				// 有目标：停止搜索，继续使用原来的自瞄跟踪。
+				// 有目标：锁存已找到目标，本次入区不再重新搜索，继续自瞄跟踪。
 				real_tracking_active = true;
 				const float target_yaw_deg = xuc.GetTargetYaw() * 57.2957795f;
 				const float target_pitch_deg = xuc.GetTargetPitch() * 57.2957795f;
 				Keep_Pantile(target_yaw_deg, PANTILE::YAW, imu_pantile);
 				Keep_Pantile(target_pitch_deg, PANTILE::PITCH, imu_pantile);
 			}
-			else
+			else if (!real_tracking_active)
 			{
-				// 无目标：以到位时的实际云台角为中心，在相对±600范围内往复扫描。
-				if (real_tracking_active)
-				{
-					// 丢失目标时从实际角度接续扫描，中心仍保持到位时的角度。
-					real_search_offset = can1_motor[4].angle[now] - real_search_center_yaw;
-					while (real_search_offset > 4096.0f) real_search_offset -= 8192.0f;
-					while (real_search_offset < -4096.0f) real_search_offset += 8192.0f;
-					// 自瞄越过搜索边界后，也只按扫描步长逐步回到范围内。
-					if (real_search_offset <= -REAL_SEARCH_YAW_RANGE)
-						real_search_direction = 1;
-					else if (real_search_offset >= REAL_SEARCH_YAW_RANGE)
-						real_search_direction = -1;
-					real_search_dwell = 0;
-					real_tracking_active = false;
-				}
+				// 仅首次找到目标前搜索；找到过目标后，丢靶保持最后的目标角。
 				if (real_search_dwell > 0)
 				{
 					real_search_dwell--;

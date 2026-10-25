@@ -54,6 +54,7 @@ public:
 	void RC_Control();
 
 private:
+	uint16_t m_processed_rc_state = 0; // Last switch state handled by ControlTask.
 	QueueHandle_t* queueHandler = NULL;
 	BaseType_t pd_Rx, pd_Tx;
 	UART* m_uart;

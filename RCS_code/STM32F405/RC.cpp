@@ -13,14 +13,25 @@ void RC::Init(UART* huart, USART_TypeDef* Instance, const uint32_t BaudRate)
 
 void RC::OnRC()
 {
+	// Keep the completed REAL run stopped until the switches leave REAL.
+	const bool real_completion_released = ctrl.chassis.real_completed &&
+		RC_STATE(rc.s[0], rc.s[1]) != RC_STATE(DOWN, MID);
+	if (ctrl.chassis.real_completed && !real_completion_released)
+	{
+		ctrl.mode = CONTROL::RESET;
+		xuc.Tx_TJ.mode_TJ = 0;
+		return;
+	}
 	RC_CheckState();
 	RC_Control();
-	if (Shift_mode())
+	if (Shift_mode() || real_completion_released)
 	{
 		ctrl.pantile.keep_angle1 = imu_pantile.GetAngleYaw();
 		can2_motor[2].need_curcircle = 0;
 		can2_motor[2].single_count = 0;
 		can2_motor[2].shoot_mode_now = Motor::stop;
+		ctrl.shooter.fire_now_single = false;
+		ctrl.shooter.fire_last_single = false;
 
 		/*ctrl.chassis.dead_started = false; 
 		ctrl.chassis.dead_part = 0;*/
@@ -316,9 +327,9 @@ void RC::Decode()
 
 bool RC::Shift_mode()
 {
-	if (rc.s[0] != pre_rc.s[0] || rc.s[1] != pre_rc.s[1])
-	{
-		return true;
-	}
-	return false;
+	// Compare with the last state handled by ControlTask, not the last RX frame.
+	const uint16_t switch_state = RC_STATE(rc.s[0], rc.s[1]);
+	const bool changed = switch_state != m_processed_rc_state;
+	m_processed_rc_state = switch_state;
+	return changed;
 }
