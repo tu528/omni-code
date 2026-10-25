@@ -183,7 +183,7 @@ VisualGDB/Debug/RC.o: RC.cpp label.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\stl_tempbuf.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\uniform_int_dist.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\limits kalman.h \
- imu.h HTmotor.h can.h xuc.h judgement.h CRC.h
+ feeder.h imu.h HTmotor.h can.h xuc.h judgement.h CRC.h
 label.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/FreeRTOS.h:
 c:\sysgcc\arm-eabi\lib\gcc\arm-none-eabi\10.3.1\include\stddef.h:
@@ -374,6 +374,7 @@ c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\stl_tempbuf.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\uniform_int_dist.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\limits:
 kalman.h:
+feeder.h:
 imu.h:
 HTmotor.h:
 can.h:

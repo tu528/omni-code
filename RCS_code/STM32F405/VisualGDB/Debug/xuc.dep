@@ -183,7 +183,7 @@ VisualGDB/Debug/xuc.o: xuc.cpp xuc.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\stl_tempbuf.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\uniform_int_dist.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\limits kalman.h \
- label.h
+ label.h feeder.h
 xuc.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/CMSIS_HAL/Device/ST/STM32F4xx/Include/stm32f4xx.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/CMSIS_HAL/Device/ST/STM32F4xx/Include/stm32f405xx.h:
@@ -377,3 +377,4 @@ c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\uniform_int_dist.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\limits:
 kalman.h:
 label.h:
+feeder.h:

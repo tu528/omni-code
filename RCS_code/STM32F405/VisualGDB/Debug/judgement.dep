@@ -184,7 +184,7 @@ VisualGDB/Debug/judgement.o: judgement.cpp judgement.h usart.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\stl_tempbuf.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\uniform_int_dist.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\limits kalman.h \
- xuc.h RC.h supercap.h can.h
+ feeder.h xuc.h RC.h supercap.h can.h
 judgement.h:
 usart.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -378,6 +378,7 @@ c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\stl_tempbuf.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\uniform_int_dist.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\limits:
 kalman.h:
+feeder.h:
 xuc.h:
 RC.h:
 supercap.h:

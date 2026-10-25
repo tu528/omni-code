@@ -9,7 +9,7 @@
 #include "task.h"
 
 #define MAX_SPEED 3000.0f
-#define PATH_FORWARD_SPEED 1500.0f   // DEAD和REAL共用的平移目标速度
+#define PATH_FORWARD_SPEED 2000.0f   // DEAD和REAL共用的平移目标速度
 
 #define PATH_YAW_KP 20.0f             // DEAD和REAL共用的yaw误差比例增益
 #define PATH_YAW_MAX_SPEED 500.0f     // DEAD和REAL共用的最大speedz航向修正
@@ -18,7 +18,7 @@
 #define PATH_BRAKE_ACCEL_MMPS2 1000.0f // DEAD和REAL共用的初始 减速度（a），单位：mm/s^2
 #define PATH_MIN_SPEED_COMMAND 120.0f  // DEAD和REAL共用的最低速度指令
 
-#define REAL_START_SPEED_SCALE 0.40f  // REAL首次出发和射击后返程起步，从目标速度的40%开始
+#define REAL_START_SPEED_SCALE 0.40f  // REAL去程和返程的每一段，均从目标速度的40%起步
 
 #define REAL_SEARCH_YAW_RANGE 600.0f   // REAL无目标时，以到位角为中心的搜索半径
 #define REAL_SEARCH_YAW_STEP 2.0f      // 每个ControlTask周期的搜索步长，约17.6度/秒
@@ -59,7 +59,7 @@ void CONTROL::Init(std::vector<Motor*> motor)
 			{
 				supply_motor[num4] = motor[i];
 				supply_motor[num4]->spinning = false;
-				supply_motor[num4]->need_curcircle = false;
+				supply_motor[num4]->single_requested = false;
 				num4++;
 			}
 			break;
@@ -96,7 +96,7 @@ void CONTROL::PANTILE::Keep_Pantile(float angleKeep, PANTILE::TYPE type,IMU fram
 		delta = degreeToMechanical(ctrl.GetDelta(angleKeep - frameOfReference.GetAngleYaw()));
 		if (delta <= -4096.f) delta += 8192.f;
 		else if (delta >= 4096.f) delta -= 8192.f;
-		if (abs(delta) >= 3.0f) mark_yaw += pantile_PID[PANTILE::YAW].Delta(delta);
+		if (abs(delta) >= 1.0f) mark_yaw += pantile_PID[PANTILE::YAW].Delta(delta);
 	}
 	else if (type == PITCH)
 	{
@@ -339,10 +339,8 @@ float CONTROL::CHASSIS::RealSpeedProfile(
 	}//------------------------------------------------------------------------------
 	// REAL模式只保留前10%的平滑加速，后段由动态刹车控制
 	const float accelerate_distance = target_distance * 0.10f;
-	// 只提高去程第一段和返程第一段的起步速度，中间换段仍按原比例加速。
-	const bool real_start_segment = (!real_returning && real_part == 0) ||
-		(real_returning && real_return_part == 0);
-	const float min_speed_scale = real_start_segment ? REAL_START_SPEED_SCALE : 0.15f;
+	// 所有运动段统一采用首段起步算法：从40%目标速度开始，按前10%里程平滑加速。
+	const float min_speed_scale = REAL_START_SPEED_SCALE;
 	if (accelerate_distance <= 0.0f)
 		return 0.0f;
 	if (traveled_distance < accelerate_distance)
@@ -728,7 +726,7 @@ void CONTROL::CHASSIS::Update()
 			break;
 		case 3: // 第4段：向左1500 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 1500.0f;
+			real_target_distance = 1300.0f;
 			break;
 		case 4: // 第5段：向前1075 mm
 			real_traveled_distance = real_dx;
@@ -736,7 +734,7 @@ void CONTROL::CHASSIS::Update()
 			break;
 		case 5: // 第6段：向右1300 mm
 			real_traveled_distance = real_dy;
-			real_target_distance = 1300.0f;
+			real_target_distance = 1400.0f;
 			break;
 		case 6: // 第7段：向前1025 mm
 			real_traveled_distance = real_dx;
@@ -784,15 +782,15 @@ void CONTROL::CHASSIS::Update()
 			break;
 		case 17: // 返程第8段：向后3050 mm
 			real_traveled_distance = -real_dx;
-			real_target_distance = 3050.0f;
+			real_target_distance = 3100.0f;
 			break;
 		case 18: // 返程第9段：向左1200 mm
 			real_traveled_distance = -real_dy;
-			real_target_distance = 1200.0f;
+			real_target_distance = 1300.0f;
 			break;
 		case 19: // 返程第10段：向后1100 mm
 			real_traveled_distance = -real_dx;
-			real_target_distance = 1100.0f;
+			real_target_distance = 1200.0f;
 			break;
 		default:
 			real_traveled_distance = 0.0f;
@@ -856,9 +854,6 @@ void CONTROL::CHASSIS::Update()
 				speedy = 0;
 				speedz = 0;
 				real_yaw_error = 0.0f;
-				can2_motor[2].need_curcircle = 0;
-				can2_motor[2].single_count = 0;
-				can2_motor[2].shoot_mode_now = Motor::stop;
 				ctrl.shooter.fire_now_single = false;
 				ctrl.shooter.fire_last_single = false;
 			}
@@ -1068,46 +1063,30 @@ void CONTROL::PANTILE::Update()
 
 void CONTROL::SHOOTER::Update()
 {
-
-	if (ctrl.mode == CONTROL::AUTOAIM)
-	{
-		can2_motor[0].setspeed = -7000;
-		can2_motor[1].setspeed = 7000;
-		fire_now_single = (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() &&xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM);
-		if(fire_now_single&&!(fire_last_single)&& can2_motor[2].shoot_mode_now == Motor::stop)
-		{
-			can2_motor[2].shoot_mode_now = Motor::single;
-			can2_motor[2].need_curcircle = 5;
-		}
-		fire_last_single = fire_now_single;
-	}
-	 else if (ctrl.mode == CONTROL::FIRE)
-	{
-		can2_motor[0].setspeed = -7000;
-		can2_motor[1].setspeed = 7000;
-
-	}
-	else if (ctrl.mode == CONTROL::REAL)
-	{
-		if (xuc.Tx_TJ.mode_TJ == 1)
-		{
-			can2_motor[0].setspeed = -7000;
-			can2_motor[1].setspeed = 7000;
-		}
-		else
-		{
-			can2_motor[0].setspeed = 0;
-			can2_motor[1].setspeed = 0;
-		}
-		fire_now_single = (xuc.Rx_TJ.shoot_TJ == 1 && xuc.RxFresh() && xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM);
-		if (fire_now_single && !(fire_last_single) && can2_motor[2].shoot_mode_now == Motor::stop)
-		{
-			can2_motor[2].shoot_mode_now = Motor::single;
-			can2_motor[2].need_curcircle = 5;
-			can2_motor[2].shoot_num += 1;
-		}
-		fire_last_single = fire_now_single;
-		if(can2_motor[2].shoot_num >=50 && !ctrl.chassis.real_returning)
+    const bool wheels_on = ctrl.mode == CONTROL::FIRE || ctrl.mode == CONTROL::AUTOAIM ||
+        (ctrl.mode == CONTROL::REAL && xuc.Tx_TJ.mode_TJ == 1 && !ctrl.chassis.real_returning);
+    can2_motor[0].setspeed = wheels_on ? -7000 : 0;
+    can2_motor[1].setspeed = wheels_on ? 7000 : 0;
+    if (ctrl.mode == CONTROL::REAL) {
+        if (!feeder_real_counting) {
+            feeder_real_baseline = can2_motor[2].feeder.started_count;
+            feeder_real_counting = true;
+        }
+        can2_motor[2].shoot_num = can2_motor[2].feeder.started_count - feeder_real_baseline;
+    } else {
+        feeder_real_counting = false;
+    }
+    const bool auto_single = ctrl.mode == CONTROL::AUTOAIM || ctrl.mode == CONTROL::REAL;
+    const bool budget_left = ctrl.mode != CONTROL::REAL || can2_motor[2].shoot_num < 50;
+    fire_now_single = auto_single && wheels_on && xuc.RxFresh() &&
+        xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM && xuc.Rx_TJ.shoot_TJ == 1;
+    if (fire_now_single && !fire_last_single && budget_left && can2_motor[2].shoot_mode_now == Motor::stop) {
+        can2_motor[2].single_requested = true;
+        can2_motor[2].shoot_mode_now = Motor::single;
+    }
+    fire_last_single = fire_now_single;
+    if (ctrl.mode == CONTROL::REAL && can2_motor[2].shoot_num >= 50 &&
+        !ctrl.chassis.real_returning && can2_motor[2].feeder.state == FeederController::IDLE)
 		{
 			xuc.Tx_TJ.mode_TJ = 0;
 			if (!return_started)
@@ -1121,17 +1100,6 @@ void CONTROL::SHOOTER::Update()
 				return_started = true;
 			}
 		}
-	}
-	 else
-	 {
-		 can2_motor[0].setspeed = 0.0f;
-		 can2_motor[1].setspeed = 0.0f;
-		 
-	 }
-	if (ctrl.mode == CONTROL::RESET)
-	{
-		can2_motor[2].setspeed = 0.0f;
-	}
 }
 float CONTROL::CHASSIS::Ramp(float setval, float curval, uint32_t RampSlope)//防止电机速度变化过快，导致电流过大，电机烧毁
 {

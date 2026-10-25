@@ -167,7 +167,7 @@ VisualGDB/Debug/taskslist.o: taskslist.cpp label.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\nested_exception.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\uniform_int_dist.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\limits kalman.h \
- imu.h usart.h RC.h tim.h gpio.h control.h \
+ feeder.h imu.h usart.h RC.h tim.h gpio.h control.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\vector \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\allocator.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\arm-none-eabi\thumb\v7e-m\nofp\bits\c++allocator.h \
@@ -358,6 +358,7 @@ c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\nested_exception.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\uniform_int_dist.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\limits:
 kalman.h:
+feeder.h:
 imu.h:
 usart.h:
 RC.h:

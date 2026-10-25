@@ -4,6 +4,8 @@
 #include "imu.h"
 #include "control.h"
 #include "RC.h"
+#include "xuc.h"
+#include "task.h"
 #define DEG_TO_RAD 0.017453292f  // �� / 180
 Motor::Motor(const motor_type type, const motor_mode mode, const function_type function, const uint32_t id, PID _speed, PID _position, PID _speed2)
 	: ID(id)
@@ -100,119 +102,8 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 	20220121--hz*/
     if (mode == ACE)
     {
-		if(shoot_mode_now == Motor::running)
-		{
-			setspeed = 500;
-			current = pid[speed].Position(setspeed - curspeed, 10000.f);
-			setcurrent = current;
-		}
-		if (shoot_mode_now == Motor::stop)
-		{
-			setspeed = 0;
-			need_curcircle = 0;
-			single_count = 0;
-			// 停止时清积分：否则制动过程把积分压到负饱和，停稳后残余电流会推着电机来回爬。
-			pid[speed].m_error[INTEGRATE] = 0.0f;
-			current = pid[speed].Position(setspeed - curspeed, 10000.f);
-			setcurrent = current;
-		}
-		if (shoot_mode_now == Motor::single  )
-		{
-			const bool single_begin_this_cycle = (need_curcircle != 0) || (single_state == SINGLE_BEGIN);
-			if (need_curcircle != 0 )
-			{
-				single_state = SINGLE_BEGIN;
-			}
-			if (single_state == SINGLE_BEGIN)
-			{
-				// 起转前清积分，避免沿用上一发停车时的残余偏置。
-				pid[speed].m_error[INTEGRATE] = 0.0f;
-				// 减速比36:1，拨弹盘一圈7发：单发=1/7圈输出=36/7圈电机=5+1/7圈。
-				// 编码器8192 counts/圈，1/7圈≈1170 counts；整圈数由 need_curcircle 给出（5）。
-				stopAngle = angle[now] + 1170;
-				if (stopAngle > 8192)
-				{
-					stopAngle -= 8192;
-					single_count = need_curcircle + 1;
-				}
-				else
-				{
-					single_count = need_curcircle;
-				}
-
-				// 记录起转时的总剩余角度（counts），用于按角度规划转速。
-				single_initial_error = stopAngle + 8192.0f * single_count - angle[now];
-
-				if (need_curcircle > 0)
-				{
-					setspeed = 700;
-				}
-				/*else
-				{
-					setspeed = -700;
-				}*/
-				need_curcircle = 0;
-				single_state = SINGLE_RUN;
-			}
-			if (single_state == SINGLE_RUN)
-			{
-				// 先更新跨圈计数，保证 remaining 连续（否则过圈那一拍会误判为倒退）。
-				if (!single_begin_this_cycle && angle[now] - angle[pre] < -7000 && single_count > 0)
-				{
-					single_count--;
-				}
-				if (!single_begin_this_cycle && angle[now] - angle[pre] > 7000)
-				{
-					single_count++;
-				}
-
-				// 按角度规划转速：前 3600 counts 加速到 700，最后 3000 counts 提前减速到 150，
-				// 让停止窗口在低速下进入，靠惯性滑过目标角的量就小了。
-				float remaining = stopAngle + 8192.0f * single_count - angle[now];
-				float traveled = single_initial_error - remaining;
-				if (traveled < 0.0f) traveled = 0.0f;
-
-				const float RAMP_UP = 3600.0f;
-				const float RAMP_DOWN = 3000.0f;
-				if (traveled < RAMP_UP)
-				{
-					setspeed = 150.0f + 550.0f * (traveled / RAMP_UP);
-				}
-				else if (remaining > RAMP_DOWN)
-				{
-					setspeed = 700.0f;
-				}
-				else
-				{
-					setspeed = 150.0f + 550.0f * (remaining / RAMP_DOWN);
-					if (setspeed < 150.0f) setspeed = 150.0f;
-				}
-				if (setspeed > 700.0f) setspeed = 700.0f;
-
-				current = pid[speed].Position(setspeed - curspeed, 10000.f);
-				setcurrent = current;
-				// 大误差时清积分：起转段和过冲段不累积，避免积分饱和把峰值顶到 900+。
-				if (fabsf(setspeed - curspeed) > 150.0f)
-				{
-					pid[speed].m_error[INTEGRATE] = 0.0f;
-				}
-			}
-			if (fabsl(stopAngle + 8192 * single_count - angle[now]) < 200)
-			{
-				single_state = SINGLE_RESET;
-				setcurrent =0;
-				current = 0;
-				shoot_mode_now = Motor::stop;
-			}
-		}
+        UpdateFeeder();
     }
-	//single_target = sum_angle + 2700 + 8192 * need_curcircle;  // 按实际方向/圈数调整
-	//	if (sum_angle >= single_target) {   // 冲过目标立刻停
-	//		single_state = SINGLE_RESET;
-	//		current = 0;
-	//		setcurrent = 0;
-	//		shoot_mode_now = stop;
-	//	}备用方案
 
 	else if (mode == POS)
 	{
@@ -250,7 +141,7 @@ uint8_t initial_cnt=0;
 void Motor::GetDistanceFromMechanicalAngle() {
 	if (initial_cnt<5)
 	initial_cnt++;
-	distance=-(6.2831853f/ 8192.0f)*sum_angle * (WHEEL_RADIUS_MM / GEAR_RATIO)-initial_x; 
+	distance=-(6.2831853f/ 8192.0f)*sum_angle * (WHEEL_RADIUS_MM / GEAR_RATIO)-initial_x;
 
 	if(initial_cnt<3)
 	initial_x = distance;
@@ -316,3 +207,38 @@ int32_t Motor::setrange(const int32_t original, const int32_t range)
 	return std::max(std::min(range, original), -range);
 }
 
+
+// All firing modes share one fixed-point single-shot controller.
+void Motor::UpdateFeeder()
+{
+    FeederController::Input input;
+    uint8_t frame[8]{};
+    input.feedback_available = can2.MotorFeedback(ID - ID1, frame);
+    input.angle = static_cast<uint16_t>(getword(frame[0], frame[1]));
+    input.feedback_available = input.feedback_available && input.angle < 8192;
+    input.rpm = getword(frame[2], frame[3]);
+    input.now = HAL_GetTick();
+    taskENTER_CRITICAL();
+    input.session = static_cast<uint8_t>(ctrl.mode) + 1;
+    input.enabled = (ctrl.mode == CONTROL::FIRE || ctrl.mode == CONTROL::AUTOAIM ||
+        (ctrl.mode == CONTROL::REAL && xuc.Tx_TJ.mode_TJ == 1 && !ctrl.chassis.real_returning)) &&
+        can2_motor[0].setspeed == -7000 && can2_motor[1].setspeed == 7000;
+    input.request = single_requested;
+    single_requested = false; // Requests while busy are dropped, not replayed.
+    taskEXIT_CRITICAL();
+    feeder.Update(input);
+    setspeed = feeder.speed;
+    shoot_mode_now = feeder.Busy() ? Motor::single : Motor::stop;
+    if (feeder.started_count != feeder_last_start || feeder.state != FeederController::RUN ||
+        abs(setspeed - input.rpm) > 150) pid[speed].m_error[INTEGRATE] = 0.0f;
+    feeder_last_start = feeder.started_count;
+    if (feeder.state == FeederController::RUN) {
+        current = setrange(pid[speed].Position(setspeed - input.rpm, 4000.f), 4000);
+    } else if (feeder.state == FeederController::SETTLE) {
+        current = (input.rpm >= -30 && input.rpm <= 30) ? 0 :
+            setrange(pid[speed].Position(-input.rpm, 2000.f), 2000);
+    } else {
+        current = 0;
+    }
+    setcurrent = current;
+}

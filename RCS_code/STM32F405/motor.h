@@ -5,6 +5,7 @@
 #include "PID.h"
 #include "kalman.h"
 #include "label.h"
+#include "feeder.h"
 #define WHEEL_RADIUS_MM 76.0f
 #define GEAR_RATIO      19.0f
 #define RPM_TO_MMPS 2.0f * 3.1415926f * WHEEL_RADIUS_MM /(60.0f * GEAR_RATIO)
@@ -45,18 +46,13 @@ private:
 	type_t type;
 public:
 	function_type function;
-	uint16_t need_curcircle;
-	enum single_state_e: uint8_t {
-		SINGLE_RUN = 0, //单发模式运行中
-		SINGLE_BEGIN ,  //单发模式开启
-		SINGLE_RESET,  //单发模式完成
-	};
-	single_state_e single_state = SINGLE_RESET;
-	int8_t single_count;//
-	int32_t single_target;
-	int8_t shoot_num ;//单发数量
-	volatile uint8_t shoot_mode_now = stop;
-	enum shoot_mode { stop=0, running , single };//running:连续拨弹 stop:停止 single:单次拨弹
+    FeederController feeder;
+    uint32_t feeder_last_start = 0;
+    void UpdateFeeder();
+    volatile bool single_requested = false;
+    uint32_t shoot_num = 0;
+    volatile uint8_t shoot_mode_now = stop;
+    enum shoot_mode { stop = 0, single = 2 }; // Continuous feed disabled.
 	static int16_t getdeltaa(int16_t diff);
 	uint8_t getStatus()const;
 	int32_t current{}, curspeed{}, setcurrent{}, setspeed{}, torque_current, motor_status, motor_angle_status, sum_angle{}, testspeed{};//这个current用于输出电流或者电压
@@ -64,8 +60,6 @@ public:
 	int16_t maxspeed{}, maxcurrent{};
 	Kalman currentKalman{ 1.f,40.f };
 	int temperature;
-	int32_t  stopAngle{};
-	float single_initial_error = 0.0f;  // single-shot initial remaining counts
 	int32_t mode{};
 	int round_count;
 	bool pd = 0, spinning = 0;//pd:单次拨弹 spinning:一秒八发(未使用)

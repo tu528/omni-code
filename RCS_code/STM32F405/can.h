@@ -35,6 +35,9 @@ class CAN
 {
 public:
 	uint8_t can_number;
+    volatile bool motor_rx_seen[12]{};
+    bool MotorFeedback(uint32_t index, uint8_t frame[8]);
+
 	void Init(CAN_TypeDef *instance);
 	void InitFilter();
 	HAL_StatusTypeDef Transmit(const uint32_t ID, const uint8_t* const pData, const uint8_t len = 8);

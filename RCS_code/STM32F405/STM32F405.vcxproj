@@ -43,6 +43,9 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <CPPLanguageStandard>GNUPP11</CPPLanguageStandard>
+      <!-- Native VC++ IntelliSense uses a different setting from the GCC compiler. -->
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <AdditionalOptions Condition="'$(DesignTimeBuild)' == 'true'">/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -70,6 +73,7 @@
     <ClCompile Include="usart.cpp" />
     <ClCompile Include="xuc.cpp" />
     <ClInclude Include="CRC.h" />
+    <ClInclude Include="feeder.h" />
     <ClInclude Include="HTmotor.h" />
     <ClInclude Include="judgement.h" />
     <ClInclude Include="led.h" />

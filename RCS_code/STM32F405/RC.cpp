@@ -27,9 +27,9 @@ void RC::OnRC()
 	if (Shift_mode() || real_completion_released)
 	{
 		ctrl.pantile.keep_angle1 = imu_pantile.GetAngleYaw();
-		can2_motor[2].need_curcircle = 0;
-		can2_motor[2].single_count = 0;
-		can2_motor[2].shoot_mode_now = Motor::stop;
+        // Cancel the pending request, preserving the fixed seven-point geometry.
+        can2_motor[2].single_requested = false;
+        can2_motor[2].shoot_mode_now = Motor::stop;
 		ctrl.shooter.fire_now_single = false;
 		ctrl.shooter.fire_last_single = false;
 
@@ -110,10 +110,6 @@ void RC::RC_Control()
 
 	if (ctrl.mode != CONTROL::RESET)
 	{
-		if (ctrl.mode != CONTROL::FIRE&& ctrl.mode != CONTROL::AUTOAIM&& ctrl.mode != CONTROL::REAL)
-		{
-			can2_motor[2].shoot_mode_now = Motor::stop;//Ç¿ÖÆ¹Ø±Õ²¦µ¯ÅÌ
-		}
 		if ( ctrl.mode != CONTROL::AUTOAIM && ctrl.mode != CONTROL::REAL)
 		{
 			xuc.Tx_TJ.mode_TJ = 0;
@@ -213,13 +209,14 @@ void RC::RC_Control()
 				// A single-shot edge takes priority when both channels are active.
 				if (fire_now && !fire_last)
 				{
-					can2_motor[2].need_curcircle = 5;
+					can2_motor[2].single_requested = true;
 					can2_motor[2].shoot_mode_now = Motor::single;
 				}
-				else if (!fire_now && (rc.ch[0] >= 200 || rc.ch[0] <= -200))
-				{
-					can2_motor[2].shoot_mode_now = Motor::running;
-				}
+                // Continuous FIRE disabled to preserve single-shot stop positions.
+                // else if (!fire_now && (rc.ch[0] >= 200 || rc.ch[0] <= -200))
+                // {
+                //     can2_motor[2].shoot_mode_now = Motor::running;
+                // }
 				else
 				{
 					can2_motor[2].shoot_mode_now = Motor::stop;

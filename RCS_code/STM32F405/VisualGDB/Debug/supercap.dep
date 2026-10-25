@@ -184,7 +184,7 @@ VisualGDB/Debug/supercap.o: supercap.cpp supercap.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\cstdint \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\inttypes.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\cstring kalman.h \
- C:/Users/wu/Desktop/omni-code/RCS_code/STM32F405/judgement.h \
+ feeder.h C:/Users/wu/Desktop/omni-code/RCS_code/STM32F405/judgement.h \
  C:/Users/wu/Desktop/omni-code/RCS_code/STM32F405/CRC.h
 supercap.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -378,5 +378,6 @@ c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\cstdint:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\inttypes.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\cstring:
 kalman.h:
+feeder.h:
 C:/Users/wu/Desktop/omni-code/RCS_code/STM32F405/judgement.h:
 C:/Users/wu/Desktop/omni-code/RCS_code/STM32F405/CRC.h:

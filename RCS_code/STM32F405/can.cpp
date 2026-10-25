@@ -1,6 +1,7 @@
 #include "can.h"
 #include "label.h"
 #include "string.h"
+#include "task.h"
 
 /*
 * @brief		CAN通信初始化函数
@@ -138,8 +139,12 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 
 	if (hcan == &can1.hcan)
 	{
-		if (id >= 0x201U && id <= 0x20CU)
-			memcpy(can1.data[id - 0x201U], hcan->pRxMsg->Data, sizeof(uint8_t) * 8);
+		if (id >= 0x201U && id <= 0x20CU && hcan->pRxMsg->IDE == CAN_ID_STD
+            && hcan->pRxMsg->RTR == CAN_RTR_DATA && hcan->pRxMsg->DLC == 8)
+        {
+            memcpy(can1.data[id - 0x201U], hcan->pRxMsg->Data, 8);
+            can1.motor_rx_seen[id - 0x201U] = true;
+        }
 	}
 	else
 	{
@@ -147,9 +152,11 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 		{
 			memcpy(can2.jointidata, hcan->pRxMsg->Data, sizeof(uint8_t) * 8);
 		}
-		else if (id >= 0x201U && id <= 0x20CU)
+		else if (id >= 0x201U && id <= 0x20CU && hcan->pRxMsg->IDE == CAN_ID_STD
+            && hcan->pRxMsg->RTR == CAN_RTR_DATA && hcan->pRxMsg->DLC == 8)
 		{
 			memcpy(can2.data[id - 0x201U], hcan->pRxMsg->Data, sizeof(uint8_t) * 8);
+            can2.motor_rx_seen[id - 0x201U] = true;
 		}
 		//other IDs are ignored to avoid out-of-bounds writes
 	}
@@ -172,4 +179,15 @@ extern "C" void CAN2_TX_IRQHandler()
 extern "C" void CAN2_RX0_IRQHandler()
 {
 	HAL_CAN_IRQHandler(&can2.hcan);
+}
+
+// Task-context snapshot of the latest received motor frame, without an age timeout.
+bool CAN::MotorFeedback(uint32_t index, uint8_t frame[8])
+{
+    if (index >= 12) return false;
+    taskENTER_CRITICAL();
+    memcpy(frame, data[index], 8);
+    const bool available = motor_rx_seen[index];
+    taskEXIT_CRITICAL();
+    return available;
 }

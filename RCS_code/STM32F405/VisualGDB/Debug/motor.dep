@@ -167,7 +167,7 @@ VisualGDB/Debug/motor.o: motor.cpp motor.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/task.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/list.h \
  C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/queue.h \
- gpio.h HTmotor.h can.h imu.h usart.h control.h \
+ feeder.h gpio.h HTmotor.h can.h imu.h usart.h control.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\vector \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\allocator.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\arm-none-eabi\thumb\v7e-m\nofp\bits\c++allocator.h \
@@ -183,7 +183,8 @@ VisualGDB/Debug/motor.o: motor.cpp motor.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\iterator_concepts.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\concepts \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\range_cmp.h \
- c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\vector.tcc RC.h
+ c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\vector.tcc RC.h \
+ xuc.h judgement.h CRC.h
 motor.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\cinttypes:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\cstdint:
@@ -355,6 +356,7 @@ C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/task.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/list.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/queue.h:
+feeder.h:
 gpio.h:
 HTmotor.h:
 can.h:
@@ -378,3 +380,6 @@ c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\concepts:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\range_cmp.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\vector.tcc:
 RC.h:
+xuc.h:
+judgement.h:
+CRC.h:

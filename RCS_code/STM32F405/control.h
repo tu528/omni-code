@@ -99,6 +99,8 @@ public:
 	struct SHOOTER
 	{
 		bool return_started = false;
+        uint32_t feeder_real_baseline = 0;
+        bool feeder_real_counting = false;
 		float now_bullet_speed = 0.f;
 		bool fire_last_single = false;
 		bool fire_now_single = false;

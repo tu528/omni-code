@@ -175,7 +175,7 @@ VisualGDB/Debug/STM32F405.o: STM32F405.cpp \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\nested_exception.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\uniform_int_dist.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\limits kalman.h \
- label.h RC.h control.h \
+ label.h feeder.h RC.h control.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\vector \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\allocator.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\arm-none-eabi\thumb\v7e-m\nofp\bits\c++allocator.h \
@@ -380,6 +380,7 @@ c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\uniform_int_dist.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\limits:
 kalman.h:
 label.h:
+feeder.h:
 RC.h:
 control.h:
 c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\vector:
