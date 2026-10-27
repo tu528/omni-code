@@ -49,8 +49,8 @@ public:
     FeederController feeder;
     uint32_t feeder_last_start = 0;
     void UpdateFeeder();
-    volatile bool single_requested = false;
-    uint32_t shoot_num = 0;
+    volatile bool single_shoot_request = false; // 单发请求；由电机任务读取后清除
+    uint32_t shoot_num = 0; // 本次REAL中开始拨弹的次数，不代表确认出弹数
     volatile uint8_t shoot_mode_now = stop;
     enum shoot_mode { stop = 0, single = 2 }; // Continuous feed disabled.
 	static int16_t getdeltaa(int16_t diff);

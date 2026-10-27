@@ -59,7 +59,7 @@ void CONTROL::Init(std::vector<Motor*> motor)
 			{
 				supply_motor[num4] = motor[i];
 				supply_motor[num4]->spinning = false;
-				supply_motor[num4]->single_requested = false;
+				supply_motor[num4]->single_shoot_request = false;
 				num4++;
 			}
 			break;
@@ -413,6 +413,7 @@ void CONTROL::CHASSIS::Update()
 			    ? 190 * 5
 				: 150 * 5;
 		}
+
 		float target2 = -clamp_speed(-speedx * 0.707f - speedy * 0.707f + speedz);
 		float target3 = -clamp_speed(-speedx * 0.707f + speedy * 0.707f + speedz);
 		float target0 = -clamp_speed(speedx * 0.707f + speedy * 0.707f + speedz);
@@ -1063,43 +1064,61 @@ void CONTROL::PANTILE::Update()
 
 void CONTROL::SHOOTER::Update()
 {
-    const bool wheels_on = ctrl.mode == CONTROL::FIRE || ctrl.mode == CONTROL::AUTOAIM ||
+    // 摩擦轮开启条件：手动、自瞄，或REAL发射区且尚未返程。
+    const bool shooter_open = ctrl.mode == CONTROL::FIRE || ctrl.mode == CONTROL::AUTOAIM ||
         (ctrl.mode == CONTROL::REAL && xuc.Tx_TJ.mode_TJ == 1 && !ctrl.chassis.real_returning);
-    can2_motor[0].setspeed = wheels_on ? -7000 : 0;
-    can2_motor[1].setspeed = wheels_on ? 7000 : 0;
-    if (ctrl.mode == CONTROL::REAL) {
-        if (!feeder_real_counting) {
-            feeder_real_baseline = can2_motor[2].feeder.started_count;
-            feeder_real_counting = true;
+    can2_motor[0].setspeed = shooter_open ? -7000 : 0;
+    can2_motor[1].setspeed = shooter_open ? 7000 : 0;
+
+    if (ctrl.mode == CONTROL::REAL)
+    {
+        // 首次进入本次REAL流程时，记录拨弹器原有的累计开始次数。
+        if (!real_counting)
+        {
+            real_shoot_base_count = can2_motor[2].feeder.shoot_now_count;
+			real_counting = true;
         }
-        can2_motor[2].shoot_num = can2_motor[2].feeder.started_count - feeder_real_baseline;
-    } else {
-        feeder_real_counting = false;
+        // 差值是本次REAL中开始拨弹的次数，不代表确认出弹数。
+        can2_motor[2].shoot_num = can2_motor[2].feeder.shoot_now_count - real_shoot_base_count;
     }
-    const bool auto_single = ctrl.mode == CONTROL::AUTOAIM || ctrl.mode == CONTROL::REAL;
-    const bool budget_left = ctrl.mode != CONTROL::REAL || can2_motor[2].shoot_num < 50;
-    fire_now_single = auto_single && wheels_on && xuc.RxFresh() &&
+    else
+    {
+        // 下次进入REAL时，重新记录起始次数。
+		real_counting = false;
+    }
+
+    // 是否使用视觉自动单发；手动FIRE的单发请求由RC.cpp处理。
+    const bool auto_shoot_mode = ctrl.mode == CONTROL::AUTOAIM || ctrl.mode == CONTROL::REAL;
+    // 是否还能接收新单发：REAL最多50次，AUTOAIM不受此限制。
+    const bool shoot_count_allowed = ctrl.mode != CONTROL::REAL || can2_motor[2].shoot_num < 50;
+
+    // 本轮视觉开火条件：模式、摩擦轮、通信、控制字、开火位均满足。
+    fire_now_single = auto_shoot_mode && shooter_open && xuc.RxFresh() &&
         xuc.Rx_TJ.control_TJ == XUC_CONTROL_AUTOAIM && xuc.Rx_TJ.shoot_TJ == 1;
-    if (fire_now_single && !fire_last_single && budget_left && can2_motor[2].shoot_mode_now == Motor::stop) {
-        can2_motor[2].single_requested = true;
+    // 开火条件刚从0变1，且次数允许、拨弹器空闲时，提交一次单发请求。
+    if (fire_now_single && !fire_last_single && shoot_count_allowed && can2_motor[2].shoot_mode_now == Motor::stop)
+    {
+        can2_motor[2].single_shoot_request = true;
         can2_motor[2].shoot_mode_now = Motor::single;
     }
-    fire_last_single = fire_now_single;
+    fire_last_single = fire_now_single; // 保存本轮结果，下一轮用于检测上升沿。
+
+    // REAL达到50次后，等拨弹器空闲，再记录返程起点并启动返程。
     if (ctrl.mode == CONTROL::REAL && can2_motor[2].shoot_num >= 50 &&
         !ctrl.chassis.real_returning && can2_motor[2].feeder.state == FeederController::IDLE)
-		{
-			xuc.Tx_TJ.mode_TJ = 0;
-			if (!return_started)
-			{
-				ctrl.chassis.real_d0 = can1_motor[0].distance;
-				ctrl.chassis.real_d1 = can1_motor[1].distance;
-				ctrl.chassis.real_d2 = can1_motor[2].distance;
-				ctrl.chassis.real_d3 = can1_motor[3].distance;
-				ctrl.chassis.real_yaw_target = imu_pantile.GetAngleYaw();
-				ctrl.chassis.real_returning = true;
-				return_started = true;
-			}
-		}
+    {
+        xuc.Tx_TJ.mode_TJ = 0;
+        if (!return_started)
+        {
+            ctrl.chassis.real_d0 = can1_motor[0].distance;
+            ctrl.chassis.real_d1 = can1_motor[1].distance;
+            ctrl.chassis.real_d2 = can1_motor[2].distance;
+            ctrl.chassis.real_d3 = can1_motor[3].distance;
+            ctrl.chassis.real_yaw_target = imu_pantile.GetAngleYaw();
+            ctrl.chassis.real_returning = true;
+            return_started = true;
+        }
+    }
 }
 float CONTROL::CHASSIS::Ramp(float setval, float curval, uint32_t RampSlope)//防止电机速度变化过快，导致电流过大，电机烧毁
 {

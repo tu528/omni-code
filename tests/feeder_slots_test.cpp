@@ -47,7 +47,7 @@ int main() {
             r.in.session = mode;
             for (int i = 0; i < 300; ++i) r.tick();
             CHECK(r.f.state == F::IDLE && r.f.speed == 0);
-            CHECK(!r.f.points_ready && r.f.started_count == 0);
+            CHECK(!r.f.points_ready && r.f.shoot_now_count == 0);
         }
         ++scenarios;
     }
@@ -56,7 +56,7 @@ int main() {
         for (unsigned i = 0; i < sizeof(raw_starts) / sizeof(raw_starts[0]); ++i) {
             Rig r(raw_starts[i]); r.tick(500); r.request();
             CHECK(r.f.base == 500 && r.f.target == 42630);
-            CHECK(r.f.speed == 150 && r.f.started_count == 1);
+            CHECK(r.f.speed == 150 && r.f.shoot_now_count == 1);
             r.arrive();
             CHECK(r.f.slot_index == 1);
         }
@@ -71,7 +71,7 @@ int main() {
             const int64_t planned = (static_cast<int64_t>(shot) * 294912 + 3) / 7;
             CHECK(r.f.target == planned);
             r.arrive(shot % 2 ? -100 : 100);
-            CHECK(r.f.slot_index == shot && r.f.started_count == static_cast<unsigned>(shot));
+            CHECK(r.f.slot_index == shot && r.f.shoot_now_count == static_cast<unsigned>(shot));
             CHECK(r.f.base == 0);
             for (int i = 0; i < 7; ++i) CHECK(r.f.points[i] == expected[i]);
         }
@@ -82,7 +82,7 @@ int main() {
         Rig r; r.request(); r.arrive(-100);
         for (int mode = 2; mode <= 4; ++mode) {
             r.in.session = mode; r.tick();
-            CHECK(r.f.state == F::IDLE && r.f.started_count == 1);
+            CHECK(r.f.state == F::IDLE && r.f.shoot_now_count == 1);
             CHECK(r.f.base == 0 && r.f.slot_index == 1);
         }
         r.request(); CHECK(r.f.target == 84261); r.arrive();
@@ -94,7 +94,7 @@ int main() {
         r.in.enabled = false; r.tick();
         CHECK(r.f.state == F::IDLE && r.f.speed == 0 && r.f.slot_index == 0);
         r.in.enabled = true; r.in.session = 2; r.tick();
-        CHECK(r.f.started_count == 1);
+        CHECK(r.f.shoot_now_count == 1);
         r.request(); CHECK(r.f.target == 42130 && r.f.base == 0); r.arrive();
         ++scenarios;
     }
@@ -111,8 +111,8 @@ int main() {
     }
     { // Requests during movement are not queued or allowed to shift a target.
         Rig r; r.request(); const int64_t target = r.f.target;
-        r.request(); CHECK(r.f.started_count == 1 && r.f.target == target);
-        r.arrive(); r.tick(); CHECK(r.f.started_count == 1 && r.f.state == F::IDLE);
+        r.request(); CHECK(r.f.shoot_now_count == 1 && r.f.target == target);
+        r.arrive(); r.tick(); CHECK(r.f.shoot_now_count == 1 && r.f.state == F::IDLE);
         ++scenarios;
     }
     { // External forward movement skips stale slots without changing geometry.
@@ -145,7 +145,7 @@ int main() {
     }
     { // Missing feedback never creates a permanent lock or resets the points.
         F f; F::Input in; in.enabled = true; in.request = true; in.session = 1;
-        f.Update(in); CHECK(f.started_count == 0 && f.speed == 0);
+        f.Update(in); CHECK(f.shoot_now_count == 0 && f.speed == 0);
         Rig r; r.request(); r.in.feedback_available = false; r.tick();
         CHECK(r.f.state == F::RUN && r.f.speed > 0);
         r.in.feedback_available = true; r.arrive(); r.request();
@@ -159,7 +159,7 @@ int main() {
         r.in.enabled = false; r.tick();
         CHECK(r.f.state == F::IDLE && r.f.speed == 0);
         r.in.enabled = true; r.request(); r.arrive();
-        CHECK(r.f.started_count == 2 && r.f.slot_index == 1); ++scenarios;
+        CHECK(r.f.shoot_now_count == 2 && r.f.slot_index == 1); ++scenarios;
     }
     { // A slow shot can exceed the former two-second timeout and finish.
         Rig r; r.request();

@@ -98,12 +98,12 @@ public:
 
 	struct SHOOTER
 	{
-		bool return_started = false;
-        uint32_t feeder_real_baseline = 0;
-        bool feeder_real_counting = false;
+		bool return_started = false; // 是否已经记录并启动返程，防止重复初始化
+        uint32_t real_shoot_base_count = 0; // 进入本次REAL时，拨弹器已开始的累计次数
+        bool real_counting = false; // 是否已记录本次REAL的起始次数
 		float now_bullet_speed = 0.f;
-		bool fire_last_single = false;
-		bool fire_now_single = false;
+		bool fire_last_single = false; // 上一轮视觉开火条件是否成立
+		bool fire_now_single = false; // 本轮视觉开火条件是否成立
 
 		bool auto_shoot = false;
 		bool openRub = false, supply_bullet = false;

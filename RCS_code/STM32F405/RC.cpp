@@ -28,7 +28,7 @@ void RC::OnRC()
 	{
 		ctrl.pantile.keep_angle1 = imu_pantile.GetAngleYaw();
         // Cancel the pending request, preserving the fixed seven-point geometry.
-        can2_motor[2].single_requested = false;
+        can2_motor[2].single_shoot_request = false;
         can2_motor[2].shoot_mode_now = Motor::stop;
 		ctrl.shooter.fire_now_single = false;
 		ctrl.shooter.fire_last_single = false;
@@ -209,7 +209,7 @@ void RC::RC_Control()
 				// A single-shot edge takes priority when both channels are active.
 				if (fire_now && !fire_last)
 				{
-					can2_motor[2].single_requested = true;
+					can2_motor[2].single_shoot_request = true;
 					can2_motor[2].shoot_mode_now = Motor::single;
 				}
                 // Continuous FIRE disabled to preserve single-shot stop positions.

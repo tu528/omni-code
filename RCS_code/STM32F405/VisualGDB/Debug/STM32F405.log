@@ -1,1 +1,5 @@
-﻿
+﻿  startup_stm32f405xx.c
+  Linking ../VisualGDB/Debug/STM32F405...
+  ------------------- Memory utilization report -------------------
+  Used FLASH: 68KB out of 1024KB (6%)
+  Used RAM: 27KB out of 192KB (14%)

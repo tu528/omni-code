@@ -19,7 +19,6 @@ Motor::Motor(const motor_type type, const motor_mode mode, const function_type f
 	this->function = function;
 }
 
-
 Motor::Motor(const motor_type type, const motor_mode mode, const function_type function, const uint32_t id, PID _speed, PID _position)
 	: ID(id)
 	, type(type)
@@ -111,9 +110,9 @@ void Motor::Ontimer(uint8_t idata[][8], uint8_t* odata)//idate: receive;odate: t
 		current = pid[speed].Position(setspeed - curspeed, 10000.f);
 		setcurrent = current;
 	}
+
 	else if (mode == SPD)
 	{
-
 		current = pid[speed].Position(setspeed - curspeed, 10000.f);
 		setcurrent = current;
 	}
@@ -223,15 +222,15 @@ void Motor::UpdateFeeder()
     input.enabled = (ctrl.mode == CONTROL::FIRE || ctrl.mode == CONTROL::AUTOAIM ||
         (ctrl.mode == CONTROL::REAL && xuc.Tx_TJ.mode_TJ == 1 && !ctrl.chassis.real_returning)) &&
         can2_motor[0].setspeed == -7000 && can2_motor[1].setspeed == 7000;
-    input.request = single_requested;
-    single_requested = false; // Requests while busy are dropped, not replayed.
+    input.request = single_shoot_request;
+    single_shoot_request = false; // Requests while busy are dropped, not replayed.
     taskEXIT_CRITICAL();
     feeder.Update(input);
     setspeed = feeder.speed;
     shoot_mode_now = feeder.Busy() ? Motor::single : Motor::stop;
-    if (feeder.started_count != feeder_last_start || feeder.state != FeederController::RUN ||
+    if (feeder.shoot_now_count != feeder_last_start || feeder.state != FeederController::RUN ||
         abs(setspeed - input.rpm) > 150) pid[speed].m_error[INTEGRATE] = 0.0f;
-    feeder_last_start = feeder.started_count;
+    feeder_last_start = feeder.shoot_now_count;
     if (feeder.state == FeederController::RUN) {
         current = setrange(pid[speed].Position(setspeed - input.rpm, 4000.f), 4000);
     } else if (feeder.state == FeederController::SETTLE) {

@@ -46,7 +46,7 @@ struct Motor {
  enum {stop=0, single=2};
  uint32_t ID=ID1+2,feeder_last_start=0,shoot_num=0;
  FeederController feeder;
- bool single_requested=false;
+ bool single_shoot_request=false;
  int setspeed=0,setcurrent=0,current=0,shoot_mode_now=stop;
  float distance=0;
  PID pid[1];
@@ -57,8 +57,8 @@ struct Motor {
 struct CONTROL {
  enum {RESET,FIRE,AUTOAIM,REAL};int mode=RESET;
  struct SHOOTER {
-  bool return_started=false,feeder_real_counting=false,fire_now_single=false,fire_last_single=false;
-  uint32_t feeder_real_baseline=0;
+  bool return_started=false,real_counting=false,fire_now_single=false,fire_last_single=false;
+  uint32_t real_shoot_base_count=0;
   void Update();
  } shooter;
  struct {bool real_returning=false;float real_d0=0,real_d1=0,real_d2=0,real_d3=0,real_yaw_target=0;} chassis;
@@ -85,44 +85,44 @@ int main(){
   reset();ctrl.mode=CONTROL::FIRE;ctrl.shooter.Update();RC r;
   const int continuous_values[]={300,-300,0};
   for(int value:continuous_values){r.rc.ch[0]=value;r.Step();can2_motor[2].UpdateFeeder();
-   CHECK(!can2_motor[2].single_requested && can2_motor[2].feeder.started_count==0);
+   CHECK(!can2_motor[2].single_shoot_request && can2_motor[2].feeder.shoot_now_count==0);
    CHECK(can2_motor[2].setcurrent==0);}
   r.rc.ch[0]=300;r.rc.ch[1]=300;r.Step();can2_motor[2].UpdateFeeder();
-  CHECK(can2_motor[2].feeder.started_count==1 && can2_motor[2].feeder.target==42130);
+  CHECK(can2_motor[2].feeder.shoot_now_count==1 && can2_motor[2].feeder.target==42130);
   CHECK(can2_motor[2].setspeed==150 && can2_motor[2].setcurrent>0);
-  r.Step();CHECK(!can2_motor[2].single_requested);
+  r.Step();CHECK(!can2_motor[2].single_shoot_request);
   r.rc.ch[1]=0;r.Step();r.rc.ch[1]=-300;r.Step();
-  CHECK(!can2_motor[2].single_requested); // Busy edges are discarded.
+  CHECK(!can2_motor[2].single_shoot_request); // Busy edges are discarded.
   can2_motor[2].feeder.state=FeederController::IDLE;can2_motor[2].UpdateFeeder();
-  r.Step();CHECK(!can2_motor[2].single_requested); // Held input is not replayed.
+  r.Step();CHECK(!can2_motor[2].single_shoot_request); // Held input is not replayed.
   r.rc.ch[1]=0;r.Step();r.rc.ch[1]=300;r.Step();
-  CHECK(can2_motor[2].single_requested);
+  CHECK(can2_motor[2].single_shoot_request);
  }
  { // A request with friction-wheel commands off must produce no current.
-  reset();can2_motor[2].single_requested=true;can2_motor[2].UpdateFeeder();
-  CHECK(can2_motor[2].feeder.started_count==0 && can2_motor[2].setcurrent==0);
+  reset();can2_motor[2].single_shoot_request=true;can2_motor[2].UpdateFeeder();
+  CHECK(can2_motor[2].feeder.shoot_now_count==0 && can2_motor[2].setcurrent==0);
  }
  { // AUTOAIM entry does not move; only a valid command edge starts a shot.
   reset();ctrl.mode=CONTROL::AUTOAIM;ctrl.shooter.Update();can2_motor[2].UpdateFeeder();
-  CHECK(can2_motor[2].feeder.started_count==0);
+  CHECK(can2_motor[2].feeder.shoot_now_count==0);
   xuc.fresh=false;xuc.Rx_TJ.shoot_TJ=1;ctrl.shooter.Update();
-  CHECK(!can2_motor[2].single_requested);
+  CHECK(!can2_motor[2].single_shoot_request);
   xuc.fresh=true;ctrl.shooter.Update();can2_motor[2].UpdateFeeder();
-  CHECK(can2_motor[2].feeder.started_count==1);
-  ctrl.shooter.Update();CHECK(!can2_motor[2].single_requested);
+  CHECK(can2_motor[2].feeder.shoot_now_count==1);
+  ctrl.shooter.Update();CHECK(!can2_motor[2].single_shoot_request);
  }
  { // REAL travel suppresses shooting; count accepted starts and finish shot 50.
-  reset();ctrl.mode=CONTROL::REAL;can2_motor[2].feeder.started_count=40;
+  reset();ctrl.mode=CONTROL::REAL;can2_motor[2].feeder.shoot_now_count=40;
   xuc.Rx_TJ.shoot_TJ=1;ctrl.shooter.Update();can2_motor[2].UpdateFeeder();
   CHECK(can2_motor[2].shoot_num==0 && can2_motor[2].setspeed==0);
-  CHECK(!can2_motor[2].single_requested && can2_motor[0].setspeed==0);
-  xuc.Tx_TJ.mode_TJ=1;can2_motor[2].feeder.started_count=89;
+  CHECK(!can2_motor[2].single_shoot_request && can2_motor[0].setspeed==0);
+  xuc.Tx_TJ.mode_TJ=1;can2_motor[2].feeder.shoot_now_count=89;
   ctrl.shooter.Update();CHECK(can2_motor[2].shoot_num==49);
-  CHECK(can2_motor[2].single_requested);
-  can2_motor[2].UpdateFeeder();CHECK(can2_motor[2].feeder.started_count==90);
+  CHECK(can2_motor[2].single_shoot_request);
+  can2_motor[2].UpdateFeeder();CHECK(can2_motor[2].feeder.shoot_now_count==90);
   ctrl.shooter.Update();CHECK(can2_motor[2].shoot_num==50 && !ctrl.chassis.real_returning);
   xuc.Rx_TJ.shoot_TJ=0;ctrl.shooter.Update();xuc.Rx_TJ.shoot_TJ=1;ctrl.shooter.Update();
-  CHECK(!can2_motor[2].single_requested); // Shot 51 is blocked.
+  CHECK(!can2_motor[2].single_shoot_request); // Shot 51 is blocked.
   can2_motor[2].feeder.state=FeederController::SETTLE;ctrl.shooter.Update();
   CHECK(!ctrl.chassis.real_returning);
   can2_motor[2].feeder.state=FeederController::IDLE;ctrl.shooter.Update();
@@ -132,7 +132,7 @@ int main(){
   const int modes[]={CONTROL::FIRE,CONTROL::AUTOAIM,CONTROL::REAL};
   for(int mode:modes){
    reset();ctrl.mode=mode;xuc.Tx_TJ.mode_TJ=1;ctrl.shooter.Update();
-   can2.frame[6]=80;can2_motor[2].single_requested=true;can2_motor[2].UpdateFeeder();
+   can2.frame[6]=80;can2_motor[2].single_shoot_request=true;can2_motor[2].UpdateFeeder();
    CHECK(can2_motor[2].feeder.state==FeederController::RUN && can2_motor[2].setcurrent>0);
    for(int i=0;i<1200;++i){clock_ms+=2;can2_motor[2].UpdateFeeder();}
    CHECK(can2_motor[2].feeder.state==FeederController::RUN && can2_motor[2].setcurrent>0);
@@ -144,10 +144,10 @@ int main(){
    CHECK(can2_motor[0].setspeed==0 && can2_motor[1].setspeed==0);
    can2_motor[2].UpdateFeeder();CHECK(can2_motor[2].setcurrent==0);
    ctrl.mode=mode;ctrl.shooter.Update();
-   if(mode==CONTROL::FIRE)can2_motor[2].single_requested=true;
+   if(mode==CONTROL::FIRE)can2_motor[2].single_shoot_request=true;
    else{xuc.Rx_TJ.shoot_TJ=1;ctrl.shooter.Update();}
    can2_motor[2].UpdateFeeder();
-   CHECK(can2_motor[2].feeder.state==FeederController::RUN && can2_motor[2].feeder.started_count==2);
+   CHECK(can2_motor[2].feeder.state==FeederController::RUN && can2_motor[2].feeder.shoot_now_count==2);
   }
   reset();ctrl.mode=CONTROL::REAL;
   ctrl.shooter.Update();CHECK(can2_motor[0].setspeed==0 && can2_motor[1].setspeed==0);

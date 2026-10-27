@@ -14,7 +14,7 @@ public:
         bool feedback_available = false, enabled = false, request = false;
     };
     volatile State state = IDLE;
-    volatile uint32_t started_count = 0;
+    volatile uint32_t shoot_now_count = 0; // 上电以来累计开始拨弹次数，不代表确认出弹数
     int speed = 0;
     int64_t position = 0, base = 0, target = 0;
     int64_t points[POINTS]{};
@@ -57,7 +57,7 @@ public:
             while (base + Point(target_index) <= position + STOP_TOLERANCE) ++target_index;
             target = base + Point(target_index);
             move_start = position;
-            state = RUN; ++started_count;
+            state = RUN; ++shoot_now_count;
         }
         if (state == RUN) {
             const int64_t remaining = target - position;
