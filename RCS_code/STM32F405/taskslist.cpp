@@ -70,7 +70,7 @@ void start_task(void* pvParameters)
 		(UBaseType_t)CONTROL_TASK_PRIO,
 		(TaskHandle_t*)&ControlTask_Handler);
 
-	PowerOffTaskCreateResult = xTaskCreate(
+	PowerOffTaskCreateResult = xTaskCreate(//¶Ïµç
 		(TaskFunction_t)PowerOffTask,
 		(const char*)"PowerOffTask",
 		(uint16_t)POWER_OFF_TASK_STACK_SIZE,
