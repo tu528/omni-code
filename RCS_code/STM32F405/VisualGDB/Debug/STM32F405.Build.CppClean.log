@@ -10,6 +10,7 @@ c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\imu.o
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\judgement.o
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\label.o
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\motor.o
+c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\power_off.o
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\power_read.o
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\rc.o
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\stm32f405.o
@@ -28,6 +29,7 @@ c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\imu.dep
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\judgement.dep
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\label.dep
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\motor.dep
+c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\power_off.dep
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\power_read.dep
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\rc.dep
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\stm32f405.dep
@@ -46,15 +48,19 @@ c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\imu.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\judgement.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\label.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\motor.gcc.rsp
+c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\power_off.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\power_read.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\rc.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\stm32f405.gcc.rsp
+c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\stm32f405.link.rsp
+c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\stm32f405.mkbin.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\supercap.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\system_stm32f4xx.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\taskslist.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\tim.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\usart.gcc.rsp
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\xuc.gcc.rsp
+c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\stm32f405.bin
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\stm32f405.alldeps
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\__bsp_root__\stm32f4xxxx\startupfiles\startup_stm32f405xx.o
 c:\users\wu\desktop\omni-code\rcs_code\stm32f405\visualgdb\debug\__bsp_root__\stm32f4xxxx\startupfiles\startup_stm32f405xx.dep

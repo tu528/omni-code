@@ -192,7 +192,7 @@ VisualGDB/Debug/STM32F405.o: STM32F405.cpp \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\concepts \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\range_cmp.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\vector.tcc \
- judgement.h CRC.h led.h HTmotor.h Power_read.h xuc.h
+ judgement.h CRC.h led.h HTmotor.h Power_read.h power_off.h xuc.h
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 C:/Users/wu/Desktop/omni-code/RCS_code/STM32F405/stm32f4xx_hal_conf.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/STM32F4xxxx/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h:
@@ -404,4 +404,5 @@ CRC.h:
 led.h:
 HTmotor.h:
 Power_read.h:
+power_off.h:
 xuc.h:

@@ -26,6 +26,7 @@
 #include "led.h"
 #include "HTmotor.h"
 #include "Power_read.h"
+#include "power_off.h"
 #include "xuc.h"
 
 Motor can1_motor[CAN1_MOTOR_NUM] = {
@@ -76,6 +77,7 @@ int main(void)
 	imu_pantile.Init(&uart1, USART1, 961200, CH010);
 	rc.Init(&uart3, USART3, 100000);
 	power.Init(&uart5,UART5,9600);
+	power_off_controller.Init(&uart4);
 	xuc.Init(&uart6, USART6, 460800);
 
 	para.Init();

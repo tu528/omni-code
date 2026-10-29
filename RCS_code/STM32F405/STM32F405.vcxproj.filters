@@ -725,6 +725,9 @@
     <ClInclude Include="Power_read.h">
       <Filter>Header files\Inc\device</Filter>
     </ClInclude>
+    <ClInclude Include="power_off.h">
+      <Filter>Header files\Inc\device</Filter>
+    </ClInclude>
     <ClInclude Include="supercap.h">
       <Filter>Header files\Inc\device</Filter>
     </ClInclude>
@@ -743,6 +746,9 @@
       <Filter>Source files\Src\device</Filter>
     </ClCompile>
     <ClCompile Include="Power_read.cpp">
+      <Filter>Source files\Src\device</Filter>
+    </ClCompile>
+    <ClCompile Include="power_off.cpp">
       <Filter>Source files\Src\device</Filter>
     </ClCompile>
     <ClCompile Include="supercap.cpp">

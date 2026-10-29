@@ -184,7 +184,7 @@ VisualGDB/Debug/taskslist.o: taskslist.cpp label.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\concepts \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\range_cmp.h \
  c:\sysgcc\arm-eabi\arm-none-eabi\include\c++\10.3.1\bits\vector.tcc \
- led.h delay.h HTmotor.h Power_read.h CRC.h xuc.h judgement.h
+ led.h delay.h HTmotor.h Power_read.h CRC.h xuc.h judgement.h power_off.h
 label.h:
 C:/Users/wu/AppData/Local/VisualGDB/EmbeddedBSPs/arm-eabi/com.sysprogs.arm.stm32/FreeRTOS/Source/Include/FreeRTOS.h:
 c:\sysgcc\arm-eabi\lib\gcc\arm-none-eabi\10.3.1\include\stddef.h:
@@ -388,3 +388,4 @@ Power_read.h:
 CRC.h:
 xuc.h:
 judgement.h:
+power_off.h:

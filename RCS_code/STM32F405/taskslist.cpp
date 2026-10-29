@@ -11,6 +11,7 @@
 #include "HTmotor.h"
 #include "Power_read.h"
 #include "xuc.h"
+#include "power_off.h"
 extern float Kp = 10;
 extern float Kd = 0.6;
 extern int start_flag;
@@ -68,6 +69,15 @@ void start_task(void* pvParameters)
 		(void*)NULL,
 		(UBaseType_t)CONTROL_TASK_PRIO,
 		(TaskHandle_t*)&ControlTask_Handler);
+
+	PowerOffTaskCreateResult = xTaskCreate(
+		(TaskFunction_t)PowerOffTask,
+		(const char*)"PowerOffTask",
+		(uint16_t)POWER_OFF_TASK_STACK_SIZE,
+		(void*)&power_off_controller,
+		(UBaseType_t)POWER_OFF_TASK_PRIORITY,
+		(TaskHandle_t*)&PowerOffTask_Handler);
+	configASSERT(PowerOffTaskCreateResult == pdPASS);
 
 	taskEXIT_CRITICAL();            //退出临界区
 	vTaskDelete(StartTask_Handler); //删除开始任务

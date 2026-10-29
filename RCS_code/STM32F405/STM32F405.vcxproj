@@ -63,6 +63,7 @@
     <ClCompile Include="judgement.cpp" />
     <ClCompile Include="label.cpp" />
     <ClCompile Include="motor.cpp" />
+    <ClCompile Include="power_off.cpp" />
     <ClCompile Include="Power_read.cpp" />
     <ClCompile Include="RC.cpp" />
     <ClCompile Include="STM32F405.cpp" />
@@ -77,6 +78,7 @@
     <ClInclude Include="HTmotor.h" />
     <ClInclude Include="judgement.h" />
     <ClInclude Include="led.h" />
+    <ClInclude Include="power_off.h" />
     <ClInclude Include="Power_read.h" />
     <ClInclude Include="supercap.h" />
     <ClInclude Include="sysclk.h" />
